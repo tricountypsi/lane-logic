@@ -16,7 +16,7 @@ export default function TabsLayout() {
         tabBarActiveTintColor: '#1d6fe0', // brand-500, kept in sync with tailwind.config.js
       }}
     >
-      <Tabs.Screen name="index" options={{ title: 'Home' }} />
+      <Tabs.Screen name="index" options={{ title: 'Home', tabBarStyle: { display: 'none' } }} />
       <Tabs.Screen name="scoring" options={{ title: 'Scoring' }} />
       <Tabs.Screen name="lane-play" options={{ title: 'Lane Play' }} />
       <Tabs.Screen name="analytics" options={{ title: 'Analytics' }} />
