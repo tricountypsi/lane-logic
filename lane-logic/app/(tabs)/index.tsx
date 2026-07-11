@@ -23,7 +23,7 @@ export default function HomeScreen() {
   return (
     <View style={{ flex: 1, backgroundColor: '#0f0f14' }}>
       {/* Full-screen SVG gradient layer — sits behind all content */}
-      <Svg style={{ position: 'absolute', width: '100%', height: '100%' }}>
+      <Svg style={{ position: 'absolute', width: '100%', height: '100%' }} pointerEvents="none">
         <Defs>
           <RadialGradient id="bg" cx="50%" cy="35%" r="70%">
             <Stop offset="0%" stopColor="#2a2a38" stopOpacity={1} />
