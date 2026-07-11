@@ -22,21 +22,25 @@ export default function HomeScreen() {
 
   return (
     <View style={{ flex: 1, backgroundColor: '#0f0f14' }}>
-      {/* Full-screen SVG gradient layer — sits behind all content */}
-      <Svg style={{ position: 'absolute', width: '100%', height: '100%' }} pointerEvents="none">
-        <Defs>
-          <RadialGradient id="bg" cx="50%" cy="35%" r="70%">
-            <Stop offset="0%" stopColor="#2a2a38" stopOpacity={1} />
-            <Stop offset="100%" stopColor="#0f0f14" stopOpacity={1} />
-          </RadialGradient>
-          <RadialGradient id="glow" cx="50%" cy="38%" r="45%">
-            <Stop offset="0%" stopColor="#22d3ee" stopOpacity={0.28} />
-            <Stop offset="100%" stopColor="#22d3ee" stopOpacity={0} />
-          </RadialGradient>
-        </Defs>
-        <Rect x="0" y="0" width="100%" height="100%" fill="url(#bg)" />
-        <Rect x="0" y="0" width="100%" height="100%" fill="url(#glow)" />
-      </Svg>
+      {/* Full-screen SVG gradient layer — wrapped in a non-interactive View so
+          it never swallows pointer events on web (react-native-svg ignores the
+          pointerEvents prop on web; the View wrapper reliably passes it to CSS) */}
+      <View pointerEvents="none" style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0 }}>
+        <Svg style={{ width: '100%', height: '100%' }}>
+          <Defs>
+            <RadialGradient id="bg" cx="50%" cy="35%" r="70%">
+              <Stop offset="0%" stopColor="#2a2a38" stopOpacity={1} />
+              <Stop offset="100%" stopColor="#0f0f14" stopOpacity={1} />
+            </RadialGradient>
+            <RadialGradient id="glow" cx="50%" cy="38%" r="45%">
+              <Stop offset="0%" stopColor="#22d3ee" stopOpacity={0.28} />
+              <Stop offset="100%" stopColor="#22d3ee" stopOpacity={0} />
+            </RadialGradient>
+          </Defs>
+          <Rect x="0" y="0" width="100%" height="100%" fill="url(#bg)" />
+          <Rect x="0" y="0" width="100%" height="100%" fill="url(#glow)" />
+        </Svg>
+      </View>
 
       <View className="flex-1 items-center justify-center px-6">
         {/* Wordmark */}
