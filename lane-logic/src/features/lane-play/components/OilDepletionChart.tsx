@@ -34,7 +34,6 @@ export function OilDepletionChart() {
 
   const polylinePoints = points.map((p, i) => `${toX(i)},${toY(p.value)}`).join(' ');
 
-  // y-axis tick values
   const yTicks = [0, 25, 50, 75, 100];
 
   if (points.length <= 1) {
@@ -50,25 +49,27 @@ export function OilDepletionChart() {
       <Svg width="100%" height={H} viewBox={`0 0 ${W} ${H}`}>
         {/* Y-axis grid lines and labels */}
         {yTicks.map((tick) => (
-          <React.Fragment key={tick}>
-            <Line
-              x1={PAD_LEFT}
-              y1={toY(tick)}
-              x2={W - PAD_RIGHT}
-              y2={toY(tick)}
-              stroke="rgba(255,255,255,0.08)"
-              strokeWidth={1}
-            />
-            <SvgText
-              x={PAD_LEFT - 4}
-              y={toY(tick) + 4}
-              fontSize={9}
-              fill="rgba(255,255,255,0.35)"
-              textAnchor="end"
-            >
-              {tick}
-            </SvgText>
-          </React.Fragment>
+          <Line
+            key={`grid-${tick}`}
+            x1={PAD_LEFT}
+            y1={toY(tick)}
+            x2={W - PAD_RIGHT}
+            y2={toY(tick)}
+            stroke="rgba(255,255,255,0.08)"
+            strokeWidth={1}
+          />
+        ))}
+        {yTicks.map((tick) => (
+          <SvgText
+            key={`label-${tick}`}
+            x={PAD_LEFT - 4}
+            y={toY(tick) + 4}
+            fontSize={9}
+            fill="rgba(255,255,255,0.35)"
+            textAnchor="end"
+          >
+            {tick}
+          </SvgText>
         ))}
 
         {/* X-axis */}
@@ -94,7 +95,7 @@ export function OilDepletionChart() {
         {/* Data points */}
         {points.map((p, i) => (
           <Circle
-            key={i}
+            key={`dot-${i}`}
             cx={toX(i)}
             cy={toY(p.value)}
             r={3}
@@ -102,28 +103,24 @@ export function OilDepletionChart() {
           />
         ))}
 
-        {/* X-axis labels — show first, last, and a few in between */}
-        {points
-          .filter((_, i) => i === 0 || i === points.length - 1 || (points.length < 10 && i % 2 === 0))
-          .map((p, _, arr) => {
-            const i = points.indexOf(p);
-            return (
-              <SvgText
-                key={i}
-                x={toX(i)}
-                y={H - PAD_BOTTOM + 14}
-                fontSize={9}
-                fill="rgba(255,255,255,0.35)"
-                textAnchor="middle"
-              >
-                {p.label}
-              </SvgText>
-            );
-          })}
+        {/* X-axis labels */}
+        {points.map((p, i) => {
+          const show = i === 0 || i === points.length - 1 || (points.length < 10 && i % 2 === 0);
+          if (!show) return null;
+          return (
+            <SvgText
+              key={`xlabel-${i}`}
+              x={toX(i)}
+              y={H - PAD_BOTTOM + 14}
+              fontSize={9}
+              fill="rgba(255,255,255,0.35)"
+              textAnchor="middle"
+            >
+              {p.label}
+            </SvgText>
+          );
+        })}
       </Svg>
     </View>
   );
 }
-
-// React needs to be in scope for React.Fragment
-import React from 'react';
