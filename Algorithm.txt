@@ -1,0 +1,9 @@
+// Base depletion is determined by the Rev Rate (higher revs = faster oil breakdown)
+let depletion = (bowlerRev / 150); 
+
+// The Shell Type acts as a multiplier (Solids burn more, Pearls preserve more)
+if (shell === "Solid") depletion *= 1.4; 
+if (shell === "Pearl") depletion *= 0.7; 
+
+// Update the global battery state
+const newVolume = Math.max(0, oilVolume - depletion);

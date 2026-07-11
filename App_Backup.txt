@@ -1,0 +1,362 @@
+import React, { useState, useEffect } from "react";
+import {
+  LineChart,
+  Line,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip,
+  ResponsiveContainer,
+  ReferenceLine,
+} from "recharts";
+import "./styles.css";
+
+export default function App() {
+  // 1. Profile & Pin State
+  const [pins, setPins] = useState(Array(10).fill(true));
+  const [bowlerRev, setBowlerRev] = useState(450); // Default to High Rev
+
+  // 2. Telemetry State (Added "Actual Board" to track execution errors)
+  const [targetBoard, setTargetBoard] = useState(15);
+  const [actualBoard, setActualBoard] = useState(15);
+  const [ballSpeed, setBallSpeed] = useState(17.5);
+  const [shell, setShell] = useState("Solid");
+
+  // 3. Memory & Graph State
+  const [shotLog, setShotLog] = useState([]);
+  const [oilVolume, setOilVolume] = useState(100); // The "Battery" starts at 100%
+  const [chartData, setChartData] = useState([{ shot: 0, volume: 100 }]);
+
+  // 4. Virtual Coach State
+  const [coach, setCoach] = useState({
+    status: "SYSTEM READY",
+    message:
+      "Awaiting telemetry. Select profile and log shots to initialize predictive modeling.",
+    type: "state-neutral",
+  });
+
+  const togglePin = (index) => {
+    const newPins = [...pins];
+    newPins[index] = !newPins[index];
+    setPins(newPins);
+  };
+
+  const logShot = () => {
+    const standingPins = pins
+      .map((isStanding, index) => (isStanding ? index + 1 : null))
+      .filter((pin) => pin !== null);
+    const leave =
+      standingPins.length === 0 ? "Strike" : standingPins.join(", ");
+
+    // KINETIC MATH: Calculate the "Battery" Depletion per shot
+    let depletion = bowlerRev / 150; // Base depletion off rev rate
+    if (shell === "Solid") depletion *= 1.4; // Solids displace more oil
+    if (shell === "Pearl") depletion *= 0.7; // Pearls preserve oil
+
+    const newVolume = Math.max(0, oilVolume - depletion);
+    const shotNumber = shotLog.length + 1;
+
+    const newShot = {
+      shotNumber,
+      leave,
+      target: parseInt(targetBoard),
+      actual: parseInt(actualBoard),
+      speed: parseFloat(ballSpeed),
+      ball: shell,
+      volume: newVolume.toFixed(1),
+    };
+
+    setShotLog([newShot, ...shotLog]);
+    setOilVolume(newVolume);
+    setChartData([
+      ...chartData,
+      { shot: shotNumber, volume: parseFloat(newVolume.toFixed(1)) },
+    ]);
+    setPins(Array(10).fill(true)); // Reset pins
+  };
+
+  // THE BRAIN: Deep Trend Analysis
+  useEffect(() => {
+    if (shotLog.length === 0) return;
+    const latest = shotLog[0];
+    const previous = shotLog.length > 1 ? shotLog[1] : null;
+
+    // 1. Detect Execution Errors First (Missed Target)
+    if (Math.abs(latest.target - latest.actual) >= 2) {
+      setCoach({
+        status: "EXECUTION ERROR",
+        message: `Target missed by ${Math.abs(
+          latest.target - latest.actual
+        )} boards. Pattern degradation paused. Focus on release consistency before attempting lane adjustments.`,
+        type: "state-neutral",
+      });
+      return;
+    }
+
+    // 2. Detect Extreme Burnout (Battery depleted)
+    if (oilVolume <= 40) {
+      setCoach({
+        status: "CRITICAL FRICTION (BURN ZONE)",
+        message:
+          "Friction threshold heavily breached. Front oil is gone. Immediate move deep inside required. Switch to a clean pearl shell immediately.",
+        type: "state-danger",
+      });
+      return;
+    }
+
+    // 3. Analyze Trends (Back-to-Back vs Isolated)
+    if (
+      latest.leave.includes("10") &&
+      previous &&
+      previous.leave.includes("10")
+    ) {
+      setCoach({
+        status: "CONFIRMED TRANSITION",
+        message:
+          "Back-to-back flat 10-pins on optimal target hits. Transition confirmed. Move 2 boards left with your feet and 1 board with your eyes.",
+        type: "state-warn",
+      });
+    } else if (latest.leave.includes("10")) {
+      setCoach({
+        status: "MONITORING ENERGY LOSS",
+        message:
+          "Energy loss detected at pins. Target hit perfectly, but ball deflected. If this repeats next frame, a zone change is required.",
+        type: "state-warn",
+      });
+    } else if (latest.leave === "Strike" && oilVolume > 40) {
+      setCoach({
+        status: "OPTIMAL CARRY",
+        message: `Line is holding. ${latest.ball} shell matching up perfectly with current friction levels. Execute baseline.`,
+        type: "state-safe",
+      });
+    } else {
+      setCoach({
+        status: "ANALYZING IMPACT",
+        message: `Tracking shot ${latest.shotNumber}. Oil volume at ${latest.volume}%. Adjusting predictive curve.`,
+        type: "state-neutral",
+      });
+    }
+  }, [shotLog, oilVolume]);
+
+  return (
+    <div className="dashboard">
+      {/* PANEL 1: Telemetry Inputs */}
+      <div className="panel" style={{ flex: "1.2" }}>
+        <h3>1. Input Telemetry</h3>
+
+        <div
+          style={{
+            display: "flex",
+            justifyContent: "space-between",
+            marginBottom: "10px",
+          }}
+        >
+          <label style={{ color: "#8e8eaf", fontSize: "0.8rem" }}>
+            Rev Rate Profile:
+          </label>
+          <select
+            style={{
+              background: "#2d2d3d",
+              color: "#fff",
+              border: "none",
+              padding: "5px",
+            }}
+            value={bowlerRev}
+            onChange={(e) => setBowlerRev(e.target.value)}
+          >
+            <option value="450">Power Player (450 RPM)</option>
+            <option value="320">Tweener (320 RPM)</option>
+            <option value="250">Stroker (250 RPM)</option>
+          </select>
+        </div>
+
+        <div className="pin-deck">
+          <div className="pin-row">
+            {[6, 7, 8, 9].map((i) => (
+              <div
+                key={i}
+                onClick={() => togglePin(i)}
+                className={`pin ${pins[i] ? "pin-standing" : "pin-down"}`}
+              >
+                {i + 1}
+              </div>
+            ))}
+          </div>
+          <div className="pin-row">
+            {[3, 4, 5].map((i) => (
+              <div
+                key={i}
+                onClick={() => togglePin(i)}
+                className={`pin ${pins[i] ? "pin-standing" : "pin-down"}`}
+              >
+                {i + 1}
+              </div>
+            ))}
+          </div>
+          <div className="pin-row">
+            {[1, 2].map((i) => (
+              <div
+                key={i}
+                onClick={() => togglePin(i)}
+                className={`pin ${pins[i] ? "pin-standing" : "pin-down"}`}
+              >
+                {i + 1}
+              </div>
+            ))}
+          </div>
+          <div className="pin-row">
+            <div
+              onClick={() => togglePin(0)}
+              className={`pin ${pins[0] ? "pin-standing" : "pin-down"}`}
+            >
+              1
+            </div>
+          </div>
+        </div>
+
+        <div className="telemetry-grid">
+          <div className="input-group">
+            <label>Target (bd)</label>
+            <input
+              type="number"
+              className="hud-input"
+              value={targetBoard}
+              onChange={(e) => setTargetBoard(e.target.value)}
+            />
+          </div>
+          <div className="input-group">
+            <label>Actual Hit</label>
+            <input
+              type="number"
+              className="hud-input"
+              value={actualBoard}
+              onChange={(e) => setActualBoard(e.target.value)}
+              style={{
+                borderColor:
+                  Math.abs(targetBoard - actualBoard) >= 2 ? "#ffb300" : "",
+              }}
+            />
+          </div>
+          <div className="input-group">
+            <label>Speed (mph)</label>
+            <input
+              type="number"
+              step="0.1"
+              className="hud-input"
+              value={ballSpeed}
+              onChange={(e) => setBallSpeed(e.target.value)}
+            />
+          </div>
+          <div className="input-group">
+            <label>Shell</label>
+            <select
+              className="hud-input"
+              value={shell}
+              onChange={(e) => setShell(e.target.value)}
+            >
+              <option value="Solid">Solid</option>
+              <option value="Pearl">Pearl</option>
+            </select>
+          </div>
+        </div>
+
+        <button className="btn-log" onClick={logShot}>
+          Log Telemetry Data
+        </button>
+      </div>
+
+      {/* PANEL 2: Live Analytics Engine */}
+      <div className="panel" style={{ flex: "1.5" }}>
+        <h3>2. Live Kinetic Analytics</h3>
+
+        {/* The Recharts Live Graph */}
+        <div className="chart-container">
+          <ResponsiveContainer width="100%" height="100%">
+            <LineChart
+              data={chartData}
+              margin={{ top: 5, right: 20, bottom: 5, left: 0 }}
+            >
+              <CartesianGrid
+                strokeDasharray="3 3"
+                stroke="rgba(255,255,255,0.1)"
+              />
+              <XAxis
+                dataKey="shot"
+                stroke="#8e8eaf"
+                fontSize={12}
+                tickLine={false}
+              />
+              <YAxis
+                domain={[0, 100]}
+                stroke="#8e8eaf"
+                fontSize={12}
+                tickLine={false}
+              />
+              <Tooltip
+                contentStyle={{
+                  backgroundColor: "#2d2d3d",
+                  border: "none",
+                  color: "#fff",
+                }}
+              />
+              <ReferenceLine
+                y={40}
+                stroke="#ff4444"
+                strokeDasharray="3 3"
+                label={{
+                  position: "insideTopLeft",
+                  value: "Burn Threshold",
+                  fill: "#ff4444",
+                  fontSize: 10,
+                }}
+              />
+              <Line
+                type="monotone"
+                dataKey="volume"
+                stroke="#00ffff"
+                strokeWidth={3}
+                dot={{ r: 4, fill: "#00ffff" }}
+                activeDot={{ r: 6 }}
+              />
+            </LineChart>
+          </ResponsiveContainer>
+        </div>
+
+        <div className="shot-log" style={{ marginTop: "20px" }}>
+          {shotLog.map((shot, index) => (
+            <div
+              key={index}
+              className="shot-item"
+              style={{
+                display: "flex",
+                justifyContent: "space-between",
+                alignItems: "center",
+              }}
+            >
+              <div>
+                <span style={{ fontWeight: "bold", color: "#00ffff" }}>
+                  Shot {shot.shotNumber}:
+                </span>{" "}
+                {shot.leave}
+              </div>
+              <div style={{ fontSize: "0.8rem", color: "#8e8eaf" }}>
+                Vol: {shot.volume}%
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      {/* PANEL 3: Virtual Coach Output */}
+      <div className="panel" style={{ flex: "1" }}>
+        <h3>3. Virtual Coach</h3>
+        <div className={`coach-card ${coach.type}`} style={{ height: "100%" }}>
+          <div className="coach-title">{coach.status}</div>
+          <div style={{ lineHeight: "1.6", fontSize: "1.05rem" }}>
+            {coach.message}
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
