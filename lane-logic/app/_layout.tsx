@@ -2,14 +2,22 @@ import '../global.css';
 
 import { Stack } from 'expo-router';
 import { useEffect } from 'react';
-import { Platform } from 'react-native';
+import { Platform, View } from 'react-native';
 import { useFonts } from 'expo-font';
 import * as SplashScreen from 'expo-splash-screen';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 
-// Splash screen only makes sense on native. On web it leaves a transparent
-// pointer-capturing overlay that silently blocks every tap on the page.
+// GestureHandlerRootView is required on native but on web it registers
+// pointer-event interceptors that can silently swallow all taps/clicks,
+// making the entire app non-interactive. Use a plain View on web instead.
+const AppRoot = Platform.OS === 'web'
+  ? ({ style, children }: { style: object; children: React.ReactNode }) => (
+      <View style={style}>{children}</View>
+    )
+  : GestureHandlerRootView;
+
+// Splash screen only makes sense on native.
 if (Platform.OS !== 'web') {
   SplashScreen.preventAutoHideAsync();
 }
@@ -23,14 +31,12 @@ export default function RootLayout() {
     }
   }, [fontsLoaded, fontError]);
 
-  // On web: always render immediately — no splash screen to wait for.
-  // On native: hold until fonts are ready.
   if (Platform.OS !== 'web' && !fontsLoaded && !fontError) {
     return null;
   }
 
   return (
-    <GestureHandlerRootView style={{ flex: 1 }}>
+    <AppRoot style={{ flex: 1 }}>
       <SafeAreaProvider>
         <Stack screenOptions={{ headerShown: false }}>
           <Stack.Screen name="(tabs)" />
@@ -38,6 +44,6 @@ export default function RootLayout() {
           <Stack.Screen name="+not-found" />
         </Stack>
       </SafeAreaProvider>
-    </GestureHandlerRootView>
+    </AppRoot>
   );
 }
