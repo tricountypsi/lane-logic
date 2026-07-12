@@ -1,5 +1,5 @@
 import { Link } from 'expo-router';
-import { View, Text } from 'react-native';
+import { View, Text, Pressable } from 'react-native';
 
 import { BowlingBallIcon, GearIcon } from '@/components/ui/icons';
 
@@ -92,7 +92,7 @@ export default function HomeScreen() {
 
           {/* Settings */}
           <Link href="/profile" asChild style={{ flex: 1 }}>
-            <View
+            <Pressable
               style={{
                 flexDirection: 'row',
                 alignItems: 'center',
@@ -110,16 +110,16 @@ export default function HomeScreen() {
                 shadowOffset: { width: 0, height: 0 },
               }}
             >
-              <GearIcon size={18} />
-              <Text style={{ color: '#0a1f23', fontWeight: '900', fontSize: 15, letterSpacing: 1, textTransform: 'uppercase' }}>
+              <GearIcon size={18} color="#ffffff" />
+              <Text style={{ color: '#ffffff', fontWeight: '900', fontSize: 15, letterSpacing: 1, textTransform: 'uppercase' }}>
                 Settings
               </Text>
-            </View>
+            </Pressable>
           </Link>
 
           {/* Bowl */}
           <Link href="/scoring" asChild style={{ flex: 1 }}>
-            <View
+            <Pressable
               style={{
                 flexDirection: 'row',
                 alignItems: 'center',
@@ -137,11 +137,11 @@ export default function HomeScreen() {
                 shadowOffset: { width: 0, height: 0 },
               }}
             >
-              <BowlingBallIcon size={18} color="#1d6fe0" holeColor="#d9eaff" />
-              <Text style={{ color: '#0a1f23', fontWeight: '900', fontSize: 15, letterSpacing: 1, textTransform: 'uppercase' }}>
+              <BowlingBallIcon size={18} color="#22d3ee" holeColor="#0f0f14" />
+              <Text style={{ color: '#ffffff', fontWeight: '900', fontSize: 15, letterSpacing: 1, textTransform: 'uppercase' }}>
                 Bowl
               </Text>
-            </View>
+            </Pressable>
           </Link>
 
         </View>

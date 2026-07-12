@@ -11,7 +11,7 @@ interface GearIconProps {
  * Outlined settings-gear glyph (Feather-icons-style path, stroke-based) used
  * as a decorative accent next to "SETTINGS"-style call-to-actions.
  */
-export function GearIcon({ size = 18, color = '#0a1f23' }: GearIconProps) {
+export function GearIcon({ size = 18, color = '#ffffff' }: GearIconProps) {
   return (
     <Svg
       width={size}
