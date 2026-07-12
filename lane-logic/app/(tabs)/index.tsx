@@ -1,16 +1,45 @@
-import { Link } from 'expo-router';
+import { useRouter } from 'expo-router';
 import { View, Text, Pressable } from 'react-native';
 
 import { BowlingBallIcon, GearIcon } from '@/components/ui/icons';
 
 /**
- * Home / title screen. Uses expo-router <Link> (renders as <a> on web)
- * instead of router.push() so navigation works reliably in the static
- * web export without any pointer-event or JavaScript-handler quirks.
- * SVG gradient removed in favour of plain Views to avoid react-native-svg
- * swallowing pointer events on mobile web browsers.
+ * Home / title screen.
+ *
+ * Navigation uses Pressable with BOTH:
+ *   - onPress → router.push() for SPA navigation when JS is running
+ *   - href    → react-native-web renders Pressable as a real <a> tag,
+ *               so navigation works even if JS hasn't fully booted yet
+ *
+ * No Link / asChild so there's no indirection that could silently drop
+ * the click handler on web.
  */
 export default function HomeScreen() {
+  const router = useRouter();
+
+  const settingsStyle = {
+    flex: 1,
+    flexDirection: 'row' as const,
+    alignItems: 'center' as const,
+    justifyContent: 'center' as const,
+    gap: 8,
+    borderRadius: 12,
+    borderWidth: 2,
+    borderColor: '#22d3ee',
+    paddingHorizontal: 24,
+    paddingVertical: 16,
+    backgroundColor: 'rgba(34,211,238,0.1)',
+    shadowColor: '#22d3ee',
+    shadowOpacity: 0.8,
+    shadowRadius: 12,
+    shadowOffset: { width: 0, height: 0 },
+  };
+
+  const bowlStyle = {
+    ...settingsStyle,
+    backgroundColor: 'rgba(13,148,136,0.4)',
+  };
+
   return (
     <View style={{ flex: 1, backgroundColor: '#0f0f14' }}>
       {/* Subtle radial glow — pure View, no SVG, no pointer-event risk */}
@@ -87,62 +116,36 @@ export default function HomeScreen() {
           </View>
         </View>
 
-        {/* Navigation buttons — Link renders as <a> on web, always clickable */}
+        {/* Navigation buttons */}
         <View style={{ flexDirection: 'row', gap: 16, marginTop: 64, width: '100%', maxWidth: 360 }}>
 
-          {/* Settings */}
-          <Link href="/profile" asChild style={{ flex: 1 }}>
-            <Pressable
-              style={{
-                flexDirection: 'row',
-                alignItems: 'center',
-                justifyContent: 'center',
-                gap: 8,
-                borderRadius: 12,
-                borderWidth: 2,
-                borderColor: '#22d3ee',
-                paddingHorizontal: 24,
-                paddingVertical: 16,
-                backgroundColor: 'rgba(34,211,238,0.1)',
-                shadowColor: '#22d3ee',
-                shadowOpacity: 0.8,
-                shadowRadius: 12,
-                shadowOffset: { width: 0, height: 0 },
-              }}
-            >
-              <GearIcon size={18} color="#ffffff" />
-              <Text style={{ color: '#ffffff', fontWeight: '900', fontSize: 15, letterSpacing: 1, textTransform: 'uppercase' }}>
-                Settings
-              </Text>
-            </Pressable>
-          </Link>
+          {/* Settings — href makes react-native-web render a real <a> tag */}
+          <Pressable
+            onPress={() => router.push('/profile')}
+            // @ts-ignore — react-native-web supports href on Pressable
+            href="/profile"
+            accessibilityRole="link"
+            style={settingsStyle}
+          >
+            <GearIcon size={18} color="#ffffff" />
+            <Text style={{ color: '#ffffff', fontWeight: '900', fontSize: 15, letterSpacing: 1, textTransform: 'uppercase' }}>
+              Settings
+            </Text>
+          </Pressable>
 
           {/* Bowl */}
-          <Link href="/scoring" asChild style={{ flex: 1 }}>
-            <Pressable
-              style={{
-                flexDirection: 'row',
-                alignItems: 'center',
-                justifyContent: 'center',
-                gap: 8,
-                borderRadius: 12,
-                borderWidth: 2,
-                borderColor: '#22d3ee',
-                paddingHorizontal: 24,
-                paddingVertical: 16,
-                backgroundColor: 'rgba(13,148,136,0.4)',
-                shadowColor: '#22d3ee',
-                shadowOpacity: 0.8,
-                shadowRadius: 12,
-                shadowOffset: { width: 0, height: 0 },
-              }}
-            >
-              <BowlingBallIcon size={18} color="#22d3ee" holeColor="#0f0f14" />
-              <Text style={{ color: '#ffffff', fontWeight: '900', fontSize: 15, letterSpacing: 1, textTransform: 'uppercase' }}>
-                Bowl
-              </Text>
-            </Pressable>
-          </Link>
+          <Pressable
+            onPress={() => router.push('/scoring')}
+            // @ts-ignore — react-native-web supports href on Pressable
+            href="/scoring"
+            accessibilityRole="link"
+            style={bowlStyle}
+          >
+            <BowlingBallIcon size={18} color="#22d3ee" holeColor="#0f0f14" />
+            <Text style={{ color: '#ffffff', fontWeight: '900', fontSize: 15, letterSpacing: 1, textTransform: 'uppercase' }}>
+              Bowl
+            </Text>
+          </Pressable>
 
         </View>
       </View>
