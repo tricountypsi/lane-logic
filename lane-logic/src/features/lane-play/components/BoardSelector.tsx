@@ -1,4 +1,4 @@
-import { View, Text, Pressable } from 'react-native';
+import { View, Text, TouchableOpacity } from 'react-native';
 
 import { useLanePlayStore } from '../store/useLanePlayStore';
 
@@ -33,15 +33,15 @@ function BoardStepper({ label, value, onChange }: BoardStepperProps) {
     <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
       <Text style={{ width: 112, fontSize: 14, color: 'rgba(255,255,255,0.6)' }}>{label}</Text>
       <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}>
-        <Pressable onPress={() => onChange(Math.max(MIN_BOARD, value - 1))} style={btnStyle}>
+        <TouchableOpacity onPress={() => onChange(Math.max(MIN_BOARD, value - 1))} activeOpacity={0.8} style={btnStyle}>
           <Text style={{ fontSize: 18, color: 'rgba(255,255,255,0.7)' }}>−</Text>
-        </Pressable>
+        </TouchableOpacity>
         <Text style={{ width: 40, textAlign: 'center', fontSize: 18, fontWeight: '700', color: '#ffffff' }}>
           {value}
         </Text>
-        <Pressable onPress={() => onChange(Math.min(MAX_BOARD, value + 1))} style={btnStyle}>
+        <TouchableOpacity onPress={() => onChange(Math.min(MAX_BOARD, value + 1))} activeOpacity={0.8} style={btnStyle}>
           <Text style={{ fontSize: 18, color: 'rgba(255,255,255,0.7)' }}>+</Text>
-        </Pressable>
+        </TouchableOpacity>
       </View>
     </View>
   );

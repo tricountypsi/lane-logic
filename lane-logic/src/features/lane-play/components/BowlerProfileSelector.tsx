@@ -1,4 +1,4 @@
-import { View, Pressable, Text } from 'react-native';
+import { View, TouchableOpacity, Text } from 'react-native';
 
 import { useLanePlayStore } from '../store/useLanePlayStore';
 import { BOWLER_PROFILES } from '../store/useLanePlayStore';
@@ -18,9 +18,10 @@ export function BowlerProfileSelector() {
       {BOWLER_PROFILES.map((profile) => {
         const selected = profile.rpm === bowlerRpm;
         return (
-          <Pressable
+          <TouchableOpacity
             key={profile.rpm}
             onPress={() => setBowlerRpm(profile.rpm)}
+            activeOpacity={1}
             style={{
               borderRadius: 8,
               borderWidth: 1,
@@ -33,7 +34,7 @@ export function BowlerProfileSelector() {
             <Text style={{ color: selected ? '#22d3ee' : 'rgba(255,255,255,0.7)' }}>
               {profile.label}
             </Text>
-          </Pressable>
+          </TouchableOpacity>
         );
       })}
     </View>

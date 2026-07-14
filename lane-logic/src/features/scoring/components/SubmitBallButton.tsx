@@ -1,4 +1,4 @@
-import { Pressable, Text } from 'react-native';
+import { TouchableOpacity, Text } from 'react-native';
 
 import { useScoringStore } from '../store/useScoringStore';
 
@@ -14,8 +14,9 @@ export function SubmitBallButton() {
   if (isGameComplete) return null;
 
   return (
-    <Pressable
+    <TouchableOpacity
       onPress={submitBall}
+      activeOpacity={0.8}
       style={{
         alignItems: 'center',
         borderRadius: 8,
@@ -24,6 +25,6 @@ export function SubmitBallButton() {
       }}
     >
       <Text style={{ fontWeight: '700', color: '#000000' }}>Submit Ball</Text>
-    </Pressable>
+    </TouchableOpacity>
   );
 }

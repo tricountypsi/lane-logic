@@ -1,4 +1,4 @@
-import { View, Text, Pressable } from 'react-native';
+import { View, Text, TouchableOpacity } from 'react-native';
 
 import { useScoringStore } from '../store/useScoringStore';
 import { SESSION_GAME_LIMIT } from '../types';
@@ -93,8 +93,9 @@ export function SessionControls() {
 
       <View style={{ gap: 8 }}>
         {canAddGame && (
-          <Pressable
+          <TouchableOpacity
             onPress={startNewGame}
+            activeOpacity={0.8}
             style={{
               alignItems: 'center',
               borderRadius: 8,
@@ -105,12 +106,13 @@ export function SessionControls() {
             <Text style={{ fontWeight: '700', color: '#000000' }}>
               {limit !== null ? `Game ${gameNumber + 1} of ${limit}` : 'New Game'}
             </Text>
-          </Pressable>
+          </TouchableOpacity>
         )}
 
         <View style={{ flexDirection: 'row', gap: 8 }}>
-          <Pressable
+          <TouchableOpacity
             onPress={saveSession}
+            activeOpacity={0.8}
             style={{
               flex: 1,
               alignItems: 'center',
@@ -122,9 +124,10 @@ export function SessionControls() {
             }}
           >
             <Text style={{ fontWeight: '600', color: '#34d399' }}>Save Session</Text>
-          </Pressable>
-          <Pressable
+          </TouchableOpacity>
+          <TouchableOpacity
             onPress={discardSession}
+            activeOpacity={0.8}
             style={{
               flex: 1,
               alignItems: 'center',
@@ -136,7 +139,7 @@ export function SessionControls() {
             }}
           >
             <Text style={{ fontWeight: '600', color: 'rgba(255,255,255,0.5)' }}>Discard</Text>
-          </Pressable>
+          </TouchableOpacity>
         </View>
       </View>
     </View>

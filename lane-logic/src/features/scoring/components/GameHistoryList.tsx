@@ -1,4 +1,4 @@
-import { View, Text, Pressable } from 'react-native';
+import { View, Text, TouchableOpacity } from 'react-native';
 
 import { useScoringStore } from '../store/useScoringStore';
 import type { BowlingSession } from '../types';
@@ -112,8 +112,9 @@ export function GameHistoryList() {
         <SessionRow key={session.id} session={session} />
       ))}
 
-      <Pressable
+      <TouchableOpacity
         onPress={clearHistory}
+        activeOpacity={0.8}
         style={{
           marginTop: 4,
           alignItems: 'center',
@@ -125,7 +126,7 @@ export function GameHistoryList() {
         }}
       >
         <Text style={{ fontSize: 14, fontWeight: '600', color: '#f87171' }}>Clear All History</Text>
-      </Pressable>
+      </TouchableOpacity>
     </View>
   );
 }

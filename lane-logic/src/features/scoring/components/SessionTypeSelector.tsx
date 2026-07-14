@@ -1,4 +1,4 @@
-import { View, Text, Pressable } from 'react-native';
+import { View, Text, TouchableOpacity } from 'react-native';
 
 import { useScoringStore } from '../store/useScoringStore';
 import type { SessionType } from '../types';
@@ -29,10 +29,11 @@ export function SessionTypeSelector() {
         {TYPES.map((type) => {
           const selected = type === sessionType;
           return (
-            <Pressable
+            <TouchableOpacity
               key={type}
               onPress={() => setSessionType(type)}
               disabled={isLocked}
+              activeOpacity={1}
               style={{
                 flex: 1,
                 alignItems: 'center',
@@ -51,7 +52,7 @@ export function SessionTypeSelector() {
               <Text style={{ fontSize: 12, color: selected ? 'rgba(34,211,238,0.7)' : 'rgba(255,255,255,0.4)' }}>
                 {TYPE_SUBTITLE[type]}
               </Text>
-            </Pressable>
+            </TouchableOpacity>
           );
         })}
       </View>

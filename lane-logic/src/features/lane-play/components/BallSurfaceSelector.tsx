@@ -1,4 +1,4 @@
-import { View, Pressable, Text } from 'react-native';
+import { View, TouchableOpacity, Text } from 'react-native';
 
 import { useLanePlayStore } from '../store/useLanePlayStore';
 import type { BallSurface } from '../types';
@@ -15,9 +15,10 @@ export function BallSurfaceSelector() {
       {SURFACES.map((surface) => {
         const selected = surface === ballSurface;
         return (
-          <Pressable
+          <TouchableOpacity
             key={surface}
             onPress={() => setBallSurface(surface)}
+            activeOpacity={1}
             style={{
               flex: 1,
               alignItems: 'center',
@@ -32,7 +33,7 @@ export function BallSurfaceSelector() {
             <Text style={{ color: selected ? '#22d3ee' : 'rgba(255,255,255,0.7)' }}>
               {surface}
             </Text>
-          </Pressable>
+          </TouchableOpacity>
         );
       })}
     </View>

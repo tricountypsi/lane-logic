@@ -1,4 +1,4 @@
-import { View, Pressable, Text } from 'react-native';
+import { View, TouchableOpacity, Text } from 'react-native';
 
 import { useLanePlayStore } from '../store/useLanePlayStore';
 
@@ -23,9 +23,10 @@ export function PinRack() {
       {rows.map((row, rowIndex) => (
         <View key={rowIndex} style={{ flexDirection: 'row', gap: 8 }}>
           {row.map((pinIndex) => (
-            <Pressable
+            <TouchableOpacity
               key={pinIndex}
               onPress={() => togglePin(pinIndex)}
+              activeOpacity={1}
               style={{
                 height: 40,
                 width: 40,
@@ -40,7 +41,7 @@ export function PinRack() {
               <Text style={{ color: pins[pinIndex] ? '#ffffff' : 'rgba(255,255,255,0.3)' }}>
                 {pinIndex + 1}
               </Text>
-            </Pressable>
+            </TouchableOpacity>
           ))}
         </View>
       ))}

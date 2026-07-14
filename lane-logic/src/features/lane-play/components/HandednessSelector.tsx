@@ -1,4 +1,4 @@
-import { View, Pressable, Text } from 'react-native';
+import { View, TouchableOpacity, Text } from 'react-native';
 
 import { useLanePlayStore } from '../store/useLanePlayStore';
 import type { BowlingHand } from '../types';
@@ -19,9 +19,10 @@ export function HandednessSelector() {
       {HANDS.map((hand) => {
         const selected = hand === bowlerHand;
         return (
-          <Pressable
+          <TouchableOpacity
             key={hand}
             onPress={() => setBowlerHand(hand)}
+            activeOpacity={1}
             style={{
               flex: 1,
               alignItems: 'center',
@@ -36,7 +37,7 @@ export function HandednessSelector() {
             <Text style={{ color: selected ? '#22d3ee' : 'rgba(255,255,255,0.7)' }}>
               {hand}-Handed
             </Text>
-          </Pressable>
+          </TouchableOpacity>
         );
       })}
     </View>

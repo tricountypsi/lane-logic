@@ -1,4 +1,4 @@
-import { View, Text, Pressable } from 'react-native';
+import { View, Text, TouchableOpacity } from 'react-native';
 
 import { useLanePlayStore } from '../store/useLanePlayStore';
 
@@ -9,8 +9,9 @@ export function ShotLogPanel() {
 
   return (
     <View style={{ gap: 12 }}>
-      <Pressable
+      <TouchableOpacity
         onPress={() => logShot()}
+        activeOpacity={0.8}
         style={{
           alignItems: 'center',
           borderRadius: 8,
@@ -19,7 +20,7 @@ export function ShotLogPanel() {
         }}
       >
         <Text style={{ fontWeight: '700', color: '#000000' }}>Log Shot</Text>
-      </Pressable>
+      </TouchableOpacity>
 
       {shotLog.length > 0 && (
         <View style={{ gap: 4 }}>
