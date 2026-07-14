@@ -19,18 +19,27 @@ export function PinRack() {
   ];
 
   return (
-    <View className="items-center gap-2">
+    <View style={{ alignItems: 'center', gap: 8 }}>
       {rows.map((row, rowIndex) => (
-        <View key={rowIndex} className="flex-row gap-2">
+        <View key={rowIndex} style={{ flexDirection: 'row', gap: 8 }}>
           {row.map((pinIndex) => (
             <Pressable
               key={pinIndex}
               onPress={() => togglePin(pinIndex)}
-              className={`h-10 w-10 items-center justify-center rounded-full border ${
-                pins[pinIndex] ? 'border-white/20 bg-white/10' : 'border-white/5 bg-black/30'
-              }`}
+              style={{
+                height: 40,
+                width: 40,
+                alignItems: 'center',
+                justifyContent: 'center',
+                borderRadius: 9999,
+                borderWidth: 1,
+                borderColor: pins[pinIndex] ? 'rgba(255,255,255,0.2)' : 'rgba(255,255,255,0.05)',
+                backgroundColor: pins[pinIndex] ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.3)',
+              }}
             >
-              <Text className={pins[pinIndex] ? 'text-white' : 'text-white/30'}>{pinIndex + 1}</Text>
+              <Text style={{ color: pins[pinIndex] ? '#ffffff' : 'rgba(255,255,255,0.3)' }}>
+                {pinIndex + 1}
+              </Text>
             </Pressable>
           ))}
         </View>

@@ -26,34 +26,61 @@ export function SessionControls() {
   const gameNumber = currentSessionGames.length;
   const limit = SESSION_GAME_LIMIT[sessionType];
   const isSessionComplete = limit !== null && gameNumber >= limit;
-  const canAddGame = !isSessionComplete; // Practice always true
+  const canAddGame = !isSessionComplete;
 
   const progressLabel =
-    limit !== null
-      ? `Game ${gameNumber} of ${limit}`
-      : `Game ${gameNumber}`;
+    limit !== null ? `Game ${gameNumber} of ${limit}` : `Game ${gameNumber}`;
 
   return (
-    <View className="gap-3 rounded-xl border border-white/5 bg-[#242430] p-6">
-      <View className="flex-row items-center justify-between">
-        <Text className="text-xs uppercase text-[#8e8eaf]">Game Complete</Text>
-        <Text className="text-xs text-white/40">{progressLabel}</Text>
+    <View
+      style={{
+        gap: 12,
+        borderRadius: 12,
+        borderWidth: 1,
+        borderColor: 'rgba(255,255,255,0.05)',
+        backgroundColor: '#242430',
+        padding: 24,
+      }}
+    >
+      <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
+        <Text style={{ fontSize: 12, textTransform: 'uppercase', color: '#8e8eaf' }}>
+          Game Complete
+        </Text>
+        <Text style={{ fontSize: 12, color: 'rgba(255,255,255,0.4)' }}>{progressLabel}</Text>
       </View>
 
       {latestGame && (
-        <View className="items-center py-2">
-          <Text className="text-5xl font-extrabold text-cyan-300">{latestGame.finalScore}</Text>
-          <Text className="mt-1 text-xs text-white/50">Final Score</Text>
+        <View style={{ alignItems: 'center', paddingVertical: 8 }}>
+          <Text style={{ fontSize: 48, fontWeight: '800', color: '#67e8f9' }}>
+            {latestGame.finalScore}
+          </Text>
+          <Text style={{ marginTop: 4, fontSize: 12, color: 'rgba(255,255,255,0.5)' }}>
+            Final Score
+          </Text>
         </View>
       )}
 
       {isSessionComplete && (
-        <View className="rounded-lg bg-cyan-400/10 px-3 py-2">
-          <Text className="text-center text-sm font-semibold text-cyan-400">
+        <View
+          style={{
+            borderRadius: 8,
+            backgroundColor: 'rgba(34,211,238,0.1)',
+            paddingHorizontal: 12,
+            paddingVertical: 8,
+          }}
+        >
+          <Text style={{ textAlign: 'center', fontSize: 14, fontWeight: '600', color: '#22d3ee' }}>
             {sessionType} session complete
           </Text>
           {currentSessionGames.length > 1 && (
-            <Text className="text-center text-xs text-cyan-400/70 mt-0.5">
+            <Text
+              style={{
+                textAlign: 'center',
+                fontSize: 12,
+                color: 'rgba(34,211,238,0.7)',
+                marginTop: 2,
+              }}
+            >
               Avg:{' '}
               {Math.round(
                 currentSessionGames.reduce((s, g) => s + g.finalScore, 0) /
@@ -64,30 +91,51 @@ export function SessionControls() {
         </View>
       )}
 
-      <View className="gap-2">
+      <View style={{ gap: 8 }}>
         {canAddGame && (
           <Pressable
             onPress={startNewGame}
-            className="items-center rounded-lg bg-cyan-400 py-3"
+            style={{
+              alignItems: 'center',
+              borderRadius: 8,
+              backgroundColor: '#22d3ee',
+              paddingVertical: 12,
+            }}
           >
-            <Text className="font-bold text-black">
+            <Text style={{ fontWeight: '700', color: '#000000' }}>
               {limit !== null ? `Game ${gameNumber + 1} of ${limit}` : 'New Game'}
             </Text>
           </Pressable>
         )}
 
-        <View className="flex-row gap-2">
+        <View style={{ flexDirection: 'row', gap: 8 }}>
           <Pressable
             onPress={saveSession}
-            className="flex-1 items-center rounded-lg border border-emerald-400 bg-emerald-400/10 py-3"
+            style={{
+              flex: 1,
+              alignItems: 'center',
+              borderRadius: 8,
+              borderWidth: 1,
+              borderColor: '#34d399',
+              backgroundColor: 'rgba(52,211,153,0.1)',
+              paddingVertical: 12,
+            }}
           >
-            <Text className="font-semibold text-emerald-400">Save Session</Text>
+            <Text style={{ fontWeight: '600', color: '#34d399' }}>Save Session</Text>
           </Pressable>
           <Pressable
             onPress={discardSession}
-            className="flex-1 items-center rounded-lg border border-white/10 bg-white/5 py-3"
+            style={{
+              flex: 1,
+              alignItems: 'center',
+              borderRadius: 8,
+              borderWidth: 1,
+              borderColor: 'rgba(255,255,255,0.1)',
+              backgroundColor: 'rgba(255,255,255,0.05)',
+              paddingVertical: 12,
+            }}
           >
-            <Text className="font-semibold text-white/50">Discard</Text>
+            <Text style={{ fontWeight: '600', color: 'rgba(255,255,255,0.5)' }}>Discard</Text>
           </Pressable>
         </View>
       </View>

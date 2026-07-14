@@ -14,8 +14,16 @@ export function SubmitBallButton() {
   if (isGameComplete) return null;
 
   return (
-    <Pressable onPress={submitBall} className="items-center rounded-lg bg-cyan-400 py-3">
-      <Text className="font-bold text-black">Submit Ball</Text>
+    <Pressable
+      onPress={submitBall}
+      style={{
+        alignItems: 'center',
+        borderRadius: 8,
+        backgroundColor: '#22d3ee',
+        paddingVertical: 12,
+      }}
+    >
+      <Text style={{ fontWeight: '700', color: '#000000' }}>Submit Ball</Text>
     </Pressable>
   );
 }

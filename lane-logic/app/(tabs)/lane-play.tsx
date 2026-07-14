@@ -18,10 +18,23 @@ import {
  * purely layout.
  */
 export default function LanePlayScreen() {
+  const card = {
+    gap: 16,
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.05)',
+    backgroundColor: '#242430',
+    padding: 24,
+  };
+  const label = { fontSize: 12, textTransform: 'uppercase' as const, color: '#8e8eaf' };
+
   return (
-    <ScrollView className="flex-1 bg-[#1a1a24]" contentContainerClassName="gap-6 p-6">
-      <View className="gap-4 rounded-xl border border-white/5 bg-[#242430] p-6">
-        <Text className="text-xs uppercase text-[#8e8eaf]">Input Telemetry</Text>
+    <ScrollView
+      style={{ flex: 1, backgroundColor: '#1a1a24' }}
+      contentContainerStyle={{ gap: 24, padding: 24 }}
+    >
+      <View style={card}>
+        <Text style={label}>Input Telemetry</Text>
         <BowlerProfileSelector />
         <HandednessSelector />
         <PinRack />
@@ -30,13 +43,13 @@ export default function LanePlayScreen() {
         <ShotLogPanel />
       </View>
 
-      <View className="gap-4 rounded-xl border border-white/5 bg-[#242430] p-6">
-        <Text className="text-xs uppercase text-[#8e8eaf]">Live Analytics</Text>
+      <View style={card}>
+        <Text style={label}>Live Analytics</Text>
         <OilDepletionChart />
       </View>
 
-      <View className="gap-4 rounded-xl border border-white/5 bg-[#242430] p-6">
-        <Text className="text-xs uppercase text-[#8e8eaf]">Virtual Coach</Text>
+      <View style={card}>
+        <Text style={label}>Virtual Coach</Text>
         <VirtualCoachCard />
       </View>
     </ScrollView>

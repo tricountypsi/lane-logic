@@ -8,19 +8,39 @@ export function ShotLogPanel() {
   const shotLog = useLanePlayStore((state) => state.shotLog);
 
   return (
-    <View className="gap-3">
-      <Pressable onPress={logShot} className="items-center rounded-lg bg-cyan-400 py-3">
-        <Text className="font-bold text-black">Log Shot</Text>
+    <View style={{ gap: 12 }}>
+      <Pressable
+        onPress={() => logShot()}
+        style={{
+          alignItems: 'center',
+          borderRadius: 8,
+          backgroundColor: '#22d3ee',
+          paddingVertical: 12,
+        }}
+      >
+        <Text style={{ fontWeight: '700', color: '#000000' }}>Log Shot</Text>
       </Pressable>
 
       {shotLog.length > 0 && (
-        <View className="gap-1">
+        <View style={{ gap: 4 }}>
           {shotLog.slice(0, 5).map((shot) => (
-            <View key={shot.shotNumber} className="flex-row justify-between rounded bg-white/5 px-3 py-2">
-              <Text className="text-xs text-white/70">
+            <View
+              key={shot.shotNumber}
+              style={{
+                flexDirection: 'row',
+                justifyContent: 'space-between',
+                borderRadius: 4,
+                backgroundColor: 'rgba(255,255,255,0.05)',
+                paddingHorizontal: 12,
+                paddingVertical: 8,
+              }}
+            >
+              <Text style={{ fontSize: 12, color: 'rgba(255,255,255,0.7)' }}>
                 #{shot.shotNumber} — {shot.leave}
               </Text>
-              <Text className="text-xs text-white/40">{shot.oilVolumeRemaining} oil</Text>
+              <Text style={{ fontSize: 12, color: 'rgba(255,255,255,0.4)' }}>
+                {shot.oilVolumeRemaining} oil
+              </Text>
             </View>
           ))}
         </View>

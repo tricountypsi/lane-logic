@@ -32,21 +32,34 @@ export default function ScoringScreen() {
     }
   }, []);
 
-  return (
-    <ScrollView className="flex-1 bg-[#1a1a24]" contentContainerClassName="gap-6 p-6">
+  const card = {
+    gap: 16,
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.05)',
+    backgroundColor: '#242430',
+    padding: 24,
+  };
+  const label = { fontSize: 12, textTransform: 'uppercase' as const, color: '#8e8eaf' };
 
-      <View className="gap-4 rounded-xl border border-white/5 bg-[#242430] p-6">
-        <Text className="text-xs uppercase text-[#8e8eaf]">Session</Text>
+  return (
+    <ScrollView
+      style={{ flex: 1, backgroundColor: '#1a1a24' }}
+      contentContainerStyle={{ gap: 24, padding: 24 }}
+    >
+
+      <View style={card}>
+        <Text style={label}>Session</Text>
         <SessionTypeSelector />
       </View>
 
-      <View className="gap-4 rounded-xl border border-white/5 bg-[#242430] p-6">
-        <Text className="text-xs uppercase text-[#8e8eaf]">Scoreboard</Text>
+      <View style={card}>
+        <Text style={label}>Scoreboard</Text>
         <FrameScoreboard />
       </View>
 
-      <View className="gap-4 rounded-xl border border-white/5 bg-[#242430] p-6">
-        <Text className="text-xs uppercase text-[#8e8eaf]">Current Ball</Text>
+      <View style={card}>
+        <Text style={label}>Current Ball</Text>
         <PinRack />
         <BoardSelector />
         <SubmitBallButton />
@@ -55,18 +68,18 @@ export default function ScoringScreen() {
       {/* SessionControls appears only when a game has just finished */}
       <SessionControls />
 
-      <View className="gap-4 rounded-xl border border-white/5 bg-[#242430] p-6">
-        <Text className="text-xs uppercase text-[#8e8eaf]">Live Lane Condition</Text>
+      <View style={card}>
+        <Text style={label}>Live Lane Condition</Text>
         <OilDepletionChart />
       </View>
 
-      <View className="gap-4 rounded-xl border border-white/5 bg-[#242430] p-6">
-        <Text className="text-xs uppercase text-[#8e8eaf]">Virtual Coach</Text>
+      <View style={card}>
+        <Text style={label}>Virtual Coach</Text>
         <VirtualCoachCard />
       </View>
 
-      <View className="gap-4 rounded-xl border border-white/5 bg-[#242430] p-6">
-        <Text className="text-xs uppercase text-[#8e8eaf]">Session History</Text>
+      <View style={card}>
+        <Text style={label}>Session History</Text>
         <GameHistoryList />
       </View>
 

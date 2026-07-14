@@ -14,18 +14,25 @@ export function BowlerProfileSelector() {
   const setBowlerRpm = useLanePlayStore((state) => state.setBowlerRpm);
 
   return (
-    <View className="gap-2">
+    <View style={{ gap: 8 }}>
       {BOWLER_PROFILES.map((profile) => {
         const selected = profile.rpm === bowlerRpm;
         return (
           <Pressable
             key={profile.rpm}
             onPress={() => setBowlerRpm(profile.rpm)}
-            className={`rounded-lg border px-3 py-2 ${
-              selected ? 'border-cyan-400 bg-cyan-400/10' : 'border-white/10 bg-[#2d2d3d]'
-            }`}
+            style={{
+              borderRadius: 8,
+              borderWidth: 1,
+              paddingHorizontal: 12,
+              paddingVertical: 8,
+              borderColor: selected ? '#22d3ee' : 'rgba(255,255,255,0.1)',
+              backgroundColor: selected ? 'rgba(34,211,238,0.1)' : '#2d2d3d',
+            }}
           >
-            <Text className={selected ? 'text-cyan-400' : 'text-white/70'}>{profile.label}</Text>
+            <Text style={{ color: selected ? '#22d3ee' : 'rgba(255,255,255,0.7)' }}>
+              {profile.label}
+            </Text>
           </Pressable>
         );
       })}

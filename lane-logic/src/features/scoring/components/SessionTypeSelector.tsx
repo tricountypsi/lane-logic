@@ -24,8 +24,8 @@ export function SessionTypeSelector() {
   const isLocked = currentSessionGames.length > 0;
 
   return (
-    <View className="gap-2">
-      <View className="flex-row gap-2">
+    <View style={{ gap: 8 }}>
+      <View style={{ flexDirection: 'row', gap: 8 }}>
         {TYPES.map((type) => {
           const selected = type === sessionType;
           return (
@@ -33,18 +33,22 @@ export function SessionTypeSelector() {
               key={type}
               onPress={() => setSessionType(type)}
               disabled={isLocked}
-              className={`flex-1 items-center rounded-lg border px-2 py-2 ${
-                selected
-                  ? 'border-cyan-400 bg-cyan-400/10'
-                  : 'border-white/10 bg-[#2d2d3d]'
-              } ${isLocked && !selected ? 'opacity-40' : ''}`}
+              style={{
+                flex: 1,
+                alignItems: 'center',
+                borderRadius: 8,
+                borderWidth: 1,
+                paddingHorizontal: 8,
+                paddingVertical: 8,
+                borderColor: selected ? '#22d3ee' : 'rgba(255,255,255,0.1)',
+                backgroundColor: selected ? 'rgba(34,211,238,0.1)' : '#2d2d3d',
+                opacity: isLocked && !selected ? 0.4 : 1,
+              }}
             >
-              <Text
-                className={`text-sm font-semibold ${selected ? 'text-cyan-400' : 'text-white/70'}`}
-              >
+              <Text style={{ fontSize: 14, fontWeight: '600', color: selected ? '#22d3ee' : 'rgba(255,255,255,0.7)' }}>
                 {type}
               </Text>
-              <Text className={`text-xs ${selected ? 'text-cyan-400/70' : 'text-white/40'}`}>
+              <Text style={{ fontSize: 12, color: selected ? 'rgba(34,211,238,0.7)' : 'rgba(255,255,255,0.4)' }}>
                 {TYPE_SUBTITLE[type]}
               </Text>
             </Pressable>
@@ -52,7 +56,7 @@ export function SessionTypeSelector() {
         })}
       </View>
       {isLocked && (
-        <Text className="text-center text-xs text-white/40">
+        <Text style={{ textAlign: 'center', fontSize: 12, color: 'rgba(255,255,255,0.4)' }}>
           Save or discard this session to switch formats
         </Text>
       )}

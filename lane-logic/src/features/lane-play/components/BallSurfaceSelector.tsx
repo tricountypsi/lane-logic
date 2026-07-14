@@ -11,18 +11,27 @@ export function BallSurfaceSelector() {
   const setBallSurface = useLanePlayStore((state) => state.setBallSurface);
 
   return (
-    <View className="flex-row gap-2">
+    <View style={{ flexDirection: 'row', gap: 8 }}>
       {SURFACES.map((surface) => {
         const selected = surface === ballSurface;
         return (
           <Pressable
             key={surface}
             onPress={() => setBallSurface(surface)}
-            className={`flex-1 items-center rounded-lg border px-3 py-2 ${
-              selected ? 'border-cyan-400 bg-cyan-400/10' : 'border-white/10 bg-[#2d2d3d]'
-            }`}
+            style={{
+              flex: 1,
+              alignItems: 'center',
+              borderRadius: 8,
+              borderWidth: 1,
+              paddingHorizontal: 12,
+              paddingVertical: 8,
+              borderColor: selected ? '#22d3ee' : 'rgba(255,255,255,0.1)',
+              backgroundColor: selected ? 'rgba(34,211,238,0.1)' : '#2d2d3d',
+            }}
           >
-            <Text className={selected ? 'text-cyan-400' : 'text-white/70'}>{surface}</Text>
+            <Text style={{ color: selected ? '#22d3ee' : 'rgba(255,255,255,0.7)' }}>
+              {surface}
+            </Text>
           </Pressable>
         );
       })}
