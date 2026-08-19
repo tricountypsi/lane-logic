@@ -3,6 +3,7 @@ import { persist, createJSONStorage } from 'zustand/middleware';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
 import { useLanePlayStore } from '@/features/lane-play';
+import { supabase } from '@/lib/supabase';
 
 import { calculateScores } from '../utils/scoreCalculator';
 import { isFrameComplete, pinsStandingForNextRoll, FRAME_COUNT, PINS_PER_RACK } from '../utils/frameRules';
@@ -172,16 +173,30 @@ export const useScoringStore = create<ScoringState>()(
 
         const total = currentSessionGames.reduce((sum, g) => sum + g.finalScore, 0);
         const averageScore = Math.round(total / currentSessionGames.length);
+        const completedAt = new Date().toISOString();
 
         const session: BowlingSession = {
           id: `${Date.now()}`,
           type: sessionType,
-          completedAt: new Date().toISOString(),
+          completedAt,
           games: currentSessionGames,
           averageScore,
         };
 
-        // Save session, clear in-progress data, reset for next session.
+        // Also save to Supabase so history syncs across devices.
+        supabase.auth.getUser().then(({ data }) => {
+          const userId = data?.user?.id;
+          if (!userId) return;
+          supabase.from('game_sessions').insert({
+            user_id: userId,
+            type: sessionType,
+            completed_at: completedAt,
+            average_score: averageScore,
+            games: currentSessionGames,
+          });
+        });
+
+        // Save session locally, clear in-progress data, reset for next session.
         useLanePlayStore.getState().resetSession();
         set((state) => ({
           savedSessions: [session, ...state.savedSessions],
