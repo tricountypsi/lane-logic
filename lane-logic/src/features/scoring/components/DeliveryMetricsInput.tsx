@@ -3,23 +3,26 @@ import { View, Text } from 'react-native';
 
 import { WebButton } from '@/shared/WebButton';
 import { useScoringStore } from '../store/useScoringStore';
-import { useDeliveryStore, METRIC_CONFIG, DeliveryMetrics } from '../store/useDeliveryStore';
+import { useDeliveryStore, STEPPER_CONFIG, TOGGLE_CONFIG } from '../store/useDeliveryStore';
+
+const CYAN = '#22d3ee';
 
 /**
- * 2×3 grid of +/− steppers for per-frame delivery metrics:
- *   Speed · FL · PI · PO · HI · BK
+ * Delivery Metrics input section.
  *
- * Frame 1 starts completely blank (shown as "—"). On the first + tap,
- * the metric initialises to its sensible default then increments normally.
- * When the scoring store advances to a new frame, all values carry forward
- * from the previous frame automatically — so the bowler only adjusts
- * what actually changed between frames.
+ * Row 1 — Steppers: Speed · PI · PO
+ *   Blank (—) in Frame 1; first + tap initialises to a sensible default.
+ *   Values carry forward each frame so only small adjustments are needed.
+ *
+ * Row 2 — Toggles: FL · HI · BK
+ *   Simple on/off pills. Reset to off each new frame — these are per-shot
+ *   events, not persistent state. Tapping lights them up in cyan.
  */
 export function DeliveryMetricsInput() {
   const currentFrameIndex = useScoringStore((s) => s.currentFrameIndex);
-  const { frameMetrics, setMetric, carryForward } = useDeliveryStore();
+  const { frameMetrics, setStepperMetric, toggleMetric, carryForward } = useDeliveryStore();
 
-  // Detect frame advances and carry previous values forward
+  // Detect frame advances and carry stepper values forward
   const prevFrameRef = useRef(currentFrameIndex);
   useEffect(() => {
     if (currentFrameIndex !== prevFrameRef.current) {
@@ -29,28 +32,26 @@ export function DeliveryMetricsInput() {
   }, [currentFrameIndex, carryForward]);
 
   const metrics = frameMetrics[currentFrameIndex] ?? {
-    speed: null, fl: null, pi: null, po: null, hi: null, bk: null,
+    speed: null, pi: null, po: null, fl: false, hi: false, bk: false,
   };
 
-  const keys = Object.keys(METRIC_CONFIG) as (keyof DeliveryMetrics)[];
-  // Split into two rows of 3
-  const rows = [keys.slice(0, 3), keys.slice(3, 6)];
+  const stepperKeys = Object.keys(STEPPER_CONFIG) as ('speed' | 'pi' | 'po')[];
+  const toggleKeys  = Object.keys(TOGGLE_CONFIG)  as ('fl' | 'hi' | 'bk')[];
 
-  const handleDecrement = (key: keyof DeliveryMetrics) => {
-    const cfg = METRIC_CONFIG[key];
+  const handleDecrement = (key: 'speed' | 'pi' | 'po') => {
+    const cfg = STEPPER_CONFIG[key];
     const cur = metrics[key];
-    if (cur === null) return; // nothing to decrement from blank
-    setMetric(currentFrameIndex, key, Math.max(cfg.min, cur - 1));
+    if (cur === null) return;
+    setStepperMetric(currentFrameIndex, key, Math.max(cfg.min, cur - 1));
   };
 
-  const handleIncrement = (key: keyof DeliveryMetrics) => {
-    const cfg = METRIC_CONFIG[key];
+  const handleIncrement = (key: 'speed' | 'pi' | 'po') => {
+    const cfg = STEPPER_CONFIG[key];
     const cur = metrics[key];
     if (cur === null) {
-      // First tap — initialise to the sensible default
-      setMetric(currentFrameIndex, key, cfg.initial);
+      setStepperMetric(currentFrameIndex, key, cfg.initial);
     } else {
-      setMetric(currentFrameIndex, key, Math.min(cfg.max, cur + 1));
+      setStepperMetric(currentFrameIndex, key, Math.min(cfg.max, cur + 1));
     }
   };
 
@@ -71,69 +72,92 @@ export function DeliveryMetricsInput() {
         Delivery Metrics
       </Text>
 
-      {rows.map((row, rowIdx) => (
-        <View key={rowIdx} style={{ flexDirection: 'row', gap: 8 }}>
-          {row.map((key) => {
-            const cfg = METRIC_CONFIG[key];
-            const val = metrics[key];
-            const isBlank = val === null;
+      {/* Row 1: Steppers — Speed, PI, PO */}
+      <View style={{ flexDirection: 'row', gap: 8 }}>
+        {stepperKeys.map((key) => {
+          const cfg = STEPPER_CONFIG[key];
+          const val = metrics[key];
+          const isBlank = val === null;
 
-            return (
-              <View
-                key={key}
+          return (
+            <View
+              key={key}
+              style={{
+                flex: 1,
+                borderRadius: 8,
+                borderWidth: 1,
+                borderColor: 'rgba(255,255,255,0.07)',
+                backgroundColor: '#1e1e2a',
+                padding: 8,
+                gap: 4,
+                alignItems: 'center',
+              }}
+            >
+              <Text style={{ fontSize: 10, textTransform: 'uppercase', color: '#8e8eaf' }}>
+                {cfg.label}
+              </Text>
+              <Text
                 style={{
-                  flex: 1,
-                  borderRadius: 8,
-                  borderWidth: 1,
-                  borderColor: 'rgba(255,255,255,0.07)',
-                  backgroundColor: '#1e1e2a',
-                  padding: 8,
-                  gap: 4,
-                  alignItems: 'center',
+                  fontSize: 18,
+                  fontWeight: '700',
+                  color: isBlank ? 'rgba(255,255,255,0.2)' : '#ffffff',
+                  minWidth: 28,
+                  textAlign: 'center',
                 }}
               >
-                {/* Label */}
-                <Text style={{ fontSize: 10, textTransform: 'uppercase', color: '#8e8eaf' }}>
-                  {cfg.label}
-                </Text>
-
-                {/* Value */}
-                <Text
-                  style={{
-                    fontSize: 18,
-                    fontWeight: '700',
-                    color: isBlank ? 'rgba(255,255,255,0.2)' : '#ffffff',
-                    minWidth: 28,
-                    textAlign: 'center',
-                  }}
-                >
-                  {isBlank ? '—' : val}
-                </Text>
-
-                {/* + / − buttons */}
-                <View style={{ flexDirection: 'row', gap: 6 }}>
-                  <WebButton onPress={() => handleDecrement(key)} style={btnStyle} disabled={isBlank}>
-                    <Text
-                      style={{
-                        fontSize: 16,
-                        color: isBlank ? 'rgba(255,255,255,0.2)' : 'rgba(255,255,255,0.7)',
-                        lineHeight: 20,
-                      }}
-                    >
-                      −
-                    </Text>
-                  </WebButton>
-                  <WebButton onPress={() => handleIncrement(key)} style={btnStyle}>
-                    <Text style={{ fontSize: 16, color: 'rgba(255,255,255,0.7)', lineHeight: 20 }}>
-                      +
-                    </Text>
-                  </WebButton>
-                </View>
+                {isBlank ? '—' : val}
+              </Text>
+              <View style={{ flexDirection: 'row', gap: 6 }}>
+                <WebButton onPress={() => handleDecrement(key)} style={btnStyle} disabled={isBlank}>
+                  <Text style={{ fontSize: 16, color: isBlank ? 'rgba(255,255,255,0.2)' : 'rgba(255,255,255,0.7)', lineHeight: 20 }}>
+                    −
+                  </Text>
+                </WebButton>
+                <WebButton onPress={() => handleIncrement(key)} style={btnStyle}>
+                  <Text style={{ fontSize: 16, color: 'rgba(255,255,255,0.7)', lineHeight: 20 }}>
+                    +
+                  </Text>
+                </WebButton>
               </View>
-            );
-          })}
-        </View>
-      ))}
+            </View>
+          );
+        })}
+      </View>
+
+      {/* Row 2: Toggles — FL, HI, BK */}
+      <View style={{ flexDirection: 'row', gap: 8 }}>
+        {toggleKeys.map((key) => {
+          const cfg = TOGGLE_CONFIG[key];
+          const active = metrics[key];
+
+          return (
+            <WebButton
+              key={key}
+              onPress={() => toggleMetric(currentFrameIndex, key)}
+              style={{
+                flex: 1,
+                alignItems: 'center',
+                justifyContent: 'center',
+                borderRadius: 8,
+                borderWidth: 1,
+                paddingVertical: 12,
+                borderColor: active ? CYAN : 'rgba(255,255,255,0.1)',
+                backgroundColor: active ? CYAN : 'rgba(255,255,255,0.03)',
+              }}
+            >
+              <Text
+                style={{
+                  fontSize: 14,
+                  fontWeight: '700',
+                  color: active ? '#000000' : 'rgba(255,255,255,0.4)',
+                }}
+              >
+                {cfg.label}
+              </Text>
+            </WebButton>
+          );
+        })}
+      </View>
     </View>
   );
 }
