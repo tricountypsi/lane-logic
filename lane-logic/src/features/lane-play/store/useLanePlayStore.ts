@@ -25,6 +25,7 @@ interface LanePlayState {
   bowlerHand: BowlingHand;
   targetBoard: number;
   actualBoard: number;
+  footPosition: number;
   ballSpeedMph: number;
   ballSurface: BallSurface;
   oilVolume: number;
@@ -35,6 +36,7 @@ interface LanePlayState {
   setBowlerHand: (hand: BowlingHand) => void;
   setTargetBoard: (board: number) => void;
   setActualBoard: (board: number) => void;
+  setFootPosition: (board: number) => void;
   setBallSpeedMph: (speed: number) => void;
   setBallSurface: (surface: BallSurface) => void;
   /**
@@ -76,6 +78,7 @@ export const useLanePlayStore = create<LanePlayState>()(
       bowlerHand: 'Right',
       targetBoard: 15,
       actualBoard: 15,
+      footPosition: 20,
       ballSpeedMph: 17.5,
       ballSurface: 'Solid',
       oilVolume: STARTING_OIL_VOLUME,
@@ -92,6 +95,7 @@ export const useLanePlayStore = create<LanePlayState>()(
       setBowlerHand: (hand) => set({ bowlerHand: hand }),
       setTargetBoard: (board) => set({ targetBoard: board }),
       setActualBoard: (board) => set({ actualBoard: board }),
+      setFootPosition: (board) => set({ footPosition: board }),
       setBallSpeedMph: (speed) => set({ ballSpeedMph: speed }),
       setBallSurface: (surface) => set({ ballSurface: surface }),
 
@@ -102,6 +106,7 @@ export const useLanePlayStore = create<LanePlayState>()(
           bowlerHand,
           targetBoard,
           actualBoard,
+          footPosition,
           ballSpeedMph,
           ballSurface,
           oilVolume,
@@ -129,6 +134,7 @@ export const useLanePlayStore = create<LanePlayState>()(
           leave,
           targetBoard,
           actualBoard,
+          footPosition,
           speedMph: ballSpeedMph,
           ballSurface,
           oilVolumeRemaining: Number(newVolume.toFixed(1)),

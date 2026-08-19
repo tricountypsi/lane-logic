@@ -50,6 +50,8 @@ export interface ShotRecord {
   targetBoard: number;
   /** The board the ball actually tracked through, as read by the bowler. */
   actualBoard: number;
+  /** The board the bowler's sliding foot landed on at the foul line. */
+  footPosition: number;
   /** Ball speed at release, in mph. */
   speedMph: number;
   ballSurface: BallSurface;

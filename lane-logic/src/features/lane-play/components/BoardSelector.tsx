@@ -57,8 +57,10 @@ function BoardStepper({ label, value, onChange }: BoardStepperProps) {
 export function BoardSelector() {
   const targetBoard = useLanePlayStore((s) => s.targetBoard);
   const actualBoard = useLanePlayStore((s) => s.actualBoard);
+  const footPosition = useLanePlayStore((s) => s.footPosition);
   const setTargetBoard = useLanePlayStore((s) => s.setTargetBoard);
   const setActualBoard = useLanePlayStore((s) => s.setActualBoard);
+  const setFootPosition = useLanePlayStore((s) => s.setFootPosition);
 
   const miss = Math.abs(targetBoard - actualBoard);
   const missColor =
@@ -77,6 +79,11 @@ export function BoardSelector() {
           <Text style={{ fontSize: 12, fontWeight: '600', color: '#34d399' }}>On target</Text>
         )}
       </View>
+
+      {/* Divider */}
+      <View style={{ height: 1, backgroundColor: 'rgba(255,255,255,0.06)' }} />
+
+      <BoardStepper label="Foot Position" value={footPosition} onChange={setFootPosition} />
     </View>
   );
 }
