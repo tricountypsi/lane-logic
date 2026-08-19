@@ -1,5 +1,5 @@
 import { useEffect } from 'react';
-import { BallSelector } from '@/features/scoring/components/BallSelector':
+import { BallSelector } from '@/features/scoring/components/BallSelector';
 import { ScrollView, View, Text } from 'react-native';
 
 import { PinRack, BoardSelector, OilDepletionChart, VirtualCoachCard, useLanePlayStore } from '@/features/lane-play';
