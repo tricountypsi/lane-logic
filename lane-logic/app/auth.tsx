@@ -7,10 +7,13 @@ import {
   KeyboardAvoidingView,
   Platform,
   ScrollView,
+  Linking,
 } from 'react-native';
 
 import { WebButton } from '@/shared/WebButton';
 import { useAuthStore } from '@/features/auth/store/useAuthStore';
+
+const PRIVACY_POLICY_URL = 'https://lane-logic-eight.vercel.app/privacy-policy.html';
 
 /**
  * Email + password login / sign-up screen.
@@ -25,6 +28,7 @@ export default function AuthScreen() {
   const [mode, setMode] = useState<'signin' | 'signup'>('signin');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [agreedToPolicy, setAgreedToPolicy] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [successMsg, setSuccessMsg] = useState<string | null>(null);
@@ -35,6 +39,11 @@ export default function AuthScreen() {
 
     if (!email.trim() || !password.trim()) {
       setError('Please enter your email and password.');
+      return;
+    }
+
+    if (mode === 'signup' && !agreedToPolicy) {
+      setError('Please agree to the Privacy Policy to create an account.');
       return;
     }
 
@@ -51,8 +60,6 @@ export default function AuthScreen() {
       setSuccessMsg('Account created! Check your email to confirm, then sign in.');
       setMode('signin');
     }
-    // On successful sign-in the root layout's onAuthStateChange listener
-    // fires setSession → triggers the redirect to (tabs) automatically.
   };
 
   const inputStyle = {
@@ -133,6 +140,41 @@ export default function AuthScreen() {
             />
           </View>
 
+          {/* Privacy Policy checkbox — only on signup */}
+          {mode === 'signup' && (
+            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10, marginTop: 2 }}>
+              <WebButton
+                onPress={() => setAgreedToPolicy(!agreedToPolicy)}
+                style={{
+                  width: 22,
+                  height: 22,
+                  borderRadius: 5,
+                  borderWidth: 2,
+                  borderColor: agreedToPolicy ? '#22d3ee' : 'rgba(255,255,255,0.25)',
+                  backgroundColor: agreedToPolicy ? '#22d3ee' : 'transparent',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                }}
+              >
+                {agreedToPolicy && (
+                  <Text style={{ color: '#000', fontSize: 13, fontWeight: '800', lineHeight: 16 }}>
+                    ✓
+                  </Text>
+                )}
+              </WebButton>
+              <View style={{ flexDirection: 'row', flexWrap: 'wrap', flex: 1, gap: 3 }}>
+                <Text style={{ fontSize: 13, color: 'rgba(255,255,255,0.5)' }}>
+                  I agree to the
+                </Text>
+                <WebButton onPress={() => Linking.openURL(PRIVACY_POLICY_URL)}>
+                  <Text style={{ fontSize: 13, color: '#22d3ee', fontWeight: '600' }}>
+                    Privacy Policy
+                  </Text>
+                </WebButton>
+              </View>
+            </View>
+          )}
+
           {/* Error / success message */}
           {error && (
             <Text style={{ fontSize: 13, color: '#f87171', textAlign: 'center' }}>{error}</Text>
@@ -168,7 +210,7 @@ export default function AuthScreen() {
           <Text style={{ fontSize: 14, color: 'rgba(255,255,255,0.4)' }}>
             {mode === 'signin' ? "Don't have an account?" : 'Already have an account?'}
           </Text>
-          <WebButton onPress={() => { setError(null); setSuccessMsg(null); setMode(mode === 'signin' ? 'signup' : 'signin'); }}>
+          <WebButton onPress={() => { setError(null); setSuccessMsg(null); setAgreedToPolicy(false); setMode(mode === 'signin' ? 'signup' : 'signin'); }}>
             <Text style={{ fontSize: 14, fontWeight: '600', color: '#22d3ee' }}>
               {mode === 'signin' ? 'Sign Up' : 'Sign In'}
             </Text>
