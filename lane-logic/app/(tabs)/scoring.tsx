@@ -1,5 +1,4 @@
 import { useEffect } from 'react';
-import { BallSelector } from '@/features/scoring/components/BallSelector';
 import { ScrollView, View, Text } from 'react-native';
 
 import { PinRack, BoardSelector, OilDepletionChart, VirtualCoachCard, useLanePlayStore } from '@/features/lane-play';
@@ -10,6 +9,8 @@ import {
   SessionTypeSelector,
   SessionControls,
   ClearDataButton,
+  BallSelector,
+  DeliveryMetricsInput,
   useScoringStore,
 } from '@/features/scoring';
 
@@ -63,7 +64,8 @@ export default function ScoringScreen() {
       <View style={card}>
         <Text style={label}>Current Ball</Text>
         <PinRack />
-	<BallSelector />
+        <BallSelector />
+        <DeliveryMetricsInput />
         <BoardSelector />
         <SubmitBallButton />
       </View>

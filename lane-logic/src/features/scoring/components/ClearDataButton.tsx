@@ -3,6 +3,8 @@ import { View, Text } from 'react-native';
 
 import { WebButton } from '@/shared/WebButton';
 import { useScoringStore } from '../store/useScoringStore';
+import { useDeliveryStore } from '../store/useDeliveryStore';
+import { useBallStore } from '../store/useBallStore';
 
 /**
  * Destructive reset button — wipes the current game, lane state, and all
@@ -16,6 +18,8 @@ import { useScoringStore } from '../store/useScoringStore';
  */
 export function ClearDataButton() {
   const discardSession = useScoringStore((s) => s.discardSession);
+  const resetDelivery = useDeliveryStore((s) => s.reset);
+  const clearSelectedBall = useBallStore((s) => s.clearSelectedBall);
   const [confirming, setConfirming] = useState(false);
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
@@ -33,10 +37,12 @@ export function ClearDataButton() {
       setConfirming(true);
       return;
     }
-    // Second tap — actually clear
+    // Second tap — actually clear everything
     if (timerRef.current) clearTimeout(timerRef.current);
     setConfirming(false);
     discardSession();
+    resetDelivery();
+    clearSelectedBall();
   };
 
   return (
