@@ -9,6 +9,7 @@ import {
   GameHistoryList,
   SessionTypeSelector,
   SessionControls,
+  ClearDataButton,
   useScoringStore,
 } from '@/features/scoring';
 
@@ -69,6 +70,8 @@ export default function ScoringScreen() {
 
       {/* SessionControls appears only when a game has just finished */}
       <SessionControls />
+
+      <ClearDataButton />
 
       <View style={card}>
         <Text style={label}>Live Lane Condition</Text>
