@@ -1,22 +1,37 @@
-import { TouchableOpacity, Text } from 'react-native';
+import { Text } from 'react-native';
 
+import { WebButton } from '@/shared/WebButton';
 import { useScoringStore } from '../store/useScoringStore';
+import { useBallStore } from '../store/useBallStore';
 
 /**
- * Primary scoring action — commits whatever's toggled on the shared PinRack
- * as the next ball. Hidden while the game is complete (SessionControls takes
- * over at that point with New Game / Save / Discard options).
+ * Primary scoring action — commits the current pin state as the next ball.
+ * Also reads the selected ball label from useBallStore and includes it in
+ * the shot payload (logged here now; sent to Supabase once wired up).
+ *
+ * Hidden while the game is complete — SessionControls takes over at that
+ * point with New Game / Save / Discard options.
  */
 export function SubmitBallButton() {
   const submitBall = useScoringStore((state) => state.submitBall);
   const isGameComplete = useScoringStore((state) => state.isGameComplete);
+  const selectedBall = useBallStore((s) => s.selectedBall);
+  const clearSelectedBall = useBallStore((s) => s.clearSelectedBall);
 
   if (isGameComplete) return null;
 
+  const handleSubmit = () => {
+    // TODO: include selectedBall in Supabase shot payload, e.g.:
+    // supabase.from('shots').insert({ ...shotData, ball: selectedBall })
+    console.log('[SubmitBall] ball selected:', selectedBall ?? 'none');
+
+    submitBall();
+    clearSelectedBall();
+  };
+
   return (
-    <TouchableOpacity
-      onPress={submitBall}
-      activeOpacity={0.8}
+    <WebButton
+      onPress={handleSubmit}
       style={{
         alignItems: 'center',
         borderRadius: 8,
@@ -25,6 +40,6 @@ export function SubmitBallButton() {
       }}
     >
       <Text style={{ fontWeight: '700', color: '#000000' }}>Submit Ball</Text>
-    </TouchableOpacity>
+    </WebButton>
   );
 }
