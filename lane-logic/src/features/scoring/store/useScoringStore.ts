@@ -128,8 +128,8 @@ export const useScoringStore = create<ScoringState>()(
         const pinsNowStanding = useLanePlayStore.getState().pins;
 
         if (needsFreshRack) {
-          // Start of a new frame → full rack
-          useLanePlayStore.setState({ pins: FULL_RACK() });
+          // Start of a new frame → reset to all-dark (user selects standing pins)
+          useLanePlayStore.setState({ pins: Array(10).fill(false) });
         } else if (!gameDone) {
           // Spare setup: reset rack to all-dark so the bowler taps which
           // pins are LEFT STANDING rather than which ones fell.

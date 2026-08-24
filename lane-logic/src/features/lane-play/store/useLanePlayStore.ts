@@ -79,7 +79,7 @@ interface LanePlayState {
 export const useLanePlayStore = create<LanePlayState>()(
   persist(
     (set, get) => ({
-      pins: Array(10).fill(true),
+      pins: Array(10).fill(false),
       bowlerRpm: BOWLER_PROFILES[0].rpm,
       bowlerHand: 'Right',
       targetBoard: 15,
@@ -163,7 +163,7 @@ export const useLanePlayStore = create<LanePlayState>()(
       startNewGame: () =>
         set({
           shotLog: [],
-          pins: Array(10).fill(true),
+          pins: Array(10).fill(false),
           // oilVolume intentionally NOT reset — oil degrades continuously
           // across all games in the series
         }),
@@ -172,7 +172,7 @@ export const useLanePlayStore = create<LanePlayState>()(
         set({
           shotLog: [],
           oilVolume: STARTING_OIL_VOLUME,
-          pins: Array(10).fill(true),
+          pins: Array(10).fill(false),
         }),
     }),
     {

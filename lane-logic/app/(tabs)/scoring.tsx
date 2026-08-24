@@ -36,7 +36,7 @@ export default function ScoringScreen() {
   useEffect(() => {
     const { frames, currentFrameIndex } = useScoringStore.getState();
     if (frames[currentFrameIndex].length === 0) {
-      useLanePlayStore.setState({ pins: Array(10).fill(true) });
+      useLanePlayStore.setState({ pins: Array(10).fill(false) });
     }
   }, []);
 
