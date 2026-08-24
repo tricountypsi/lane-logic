@@ -123,15 +123,24 @@ export const useScoringStore = create<ScoringState>()(
           ? !gameDone
           : pinsStandingForNextRoll(currentFrameIndex, updatedRolls) === PINS_PER_RACK;
 
+        // Capture which pins are actually standing NOW, before we touch the rack.
+        // This becomes pinsStandingBeforeBall for the next roll.
+        const pinsNowStanding = useLanePlayStore.getState().pins;
+
         if (needsFreshRack) {
+          // Start of a new frame → full rack
           useLanePlayStore.setState({ pins: FULL_RACK() });
+        } else if (!gameDone) {
+          // Spare setup: reset rack to all-dark so the bowler taps which
+          // pins are LEFT STANDING rather than which ones fell.
+          useLanePlayStore.setState({ pins: Array(10).fill(false) });
         }
 
         set({
           frames: updatedFrames,
           currentFrameIndex: frameDone && !isLastFrame ? currentFrameIndex + 1 : currentFrameIndex,
           isGameComplete: gameDone,
-          pinsStandingBeforeBall: needsFreshRack ? FULL_RACK() : useLanePlayStore.getState().pins,
+          pinsStandingBeforeBall: needsFreshRack ? FULL_RACK() : pinsNowStanding,
         });
 
         if (gameDone) {
@@ -150,8 +159,9 @@ export const useScoringStore = create<ScoringState>()(
       },
 
       startNewGame: () => {
-        // Reset the lane condition for a fresh game within the session.
-        useLanePlayStore.getState().resetSession();
+        // Start new game but keep oil volume — oil degrades continuously
+        // across the whole series, not just one game.
+        useLanePlayStore.getState().startNewGame();
         set({
           frames: EMPTY_GAME(),
           currentFrameIndex: 0,

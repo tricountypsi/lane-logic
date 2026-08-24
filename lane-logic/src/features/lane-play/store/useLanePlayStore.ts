@@ -56,7 +56,13 @@ interface LanePlayState {
    * advance the oil depletion model.
    */
   logShot: (autoResetPins?: boolean, skipOilDepletion?: boolean) => void;
-  /** Clears all logged shots and resets the lane to a fresh oil volume. Use when starting a new game/session. */
+  /**
+   * Starts a new game within an ongoing session.
+   * Resets pins and shot log but intentionally keeps oilVolume — oil degrades
+   * continuously across all games in a series, never resetting mid-session.
+   */
+  startNewGame: () => void;
+  /** Clears all logged shots and resets the lane to a fresh oil volume. Use when ending a session. */
   resetSession: () => void;
 }
 
@@ -153,6 +159,14 @@ export const useLanePlayStore = create<LanePlayState>()(
           ...(autoResetPins ? { pins: Array(10).fill(true) } : {}),
         });
       },
+
+      startNewGame: () =>
+        set({
+          shotLog: [],
+          pins: Array(10).fill(true),
+          // oilVolume intentionally NOT reset — oil degrades continuously
+          // across all games in the series
+        }),
 
       resetSession: () =>
         set({

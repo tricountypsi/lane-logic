@@ -6,3 +6,4 @@ export { SessionControls } from './SessionControls';
 export { ClearDataButton } from './ClearDataButton';
 export { BallSelector } from './BallSelector';
 export { DeliveryMetricsInput } from './DeliveryMetricsInput';
+export { StrikeSpareButtons } from './StrikeSpareButtons';
