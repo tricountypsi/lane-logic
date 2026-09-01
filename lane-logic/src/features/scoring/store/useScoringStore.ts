@@ -1,14 +1,25 @@
 import { create } from 'zustand';
 import { persist, createJSONStorage } from 'zustand/middleware';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { Platform } from 'react-native';
 
 import { useLanePlayStore } from '@/features/lane-play';
 import { supabase } from '@/lib/supabase';
-
 import { calculateScores } from '../utils/scoreCalculator';
 import { isFrameComplete, pinsStandingForNextRoll, FRAME_COUNT, PINS_PER_RACK } from '../utils/frameRules';
 import type { CompletedGame, BowlingSession, SessionType } from '../types';
 import { SESSION_GAME_LIMIT } from '../types';
+
+/** Cross-platform alert — browser window.alert on web (always visible), Alert.alert on native. */
+function showAlert(title: string, message: string) {
+  if (Platform.OS === 'web' && typeof window !== 'undefined') {
+    window.alert(`${title}\n\n${message}`);
+  } else {
+    // Lazy-require so we don't pull react-native Alert into server bundles.
+    const { Alert } = require('react-native');
+    Alert.alert(title, message);
+  }
+}
 
 const FULL_RACK = (): boolean[] => Array(PINS_PER_RACK).fill(true);
 const EMPTY_GAME = (): number[][] => Array.from({ length: FRAME_COUNT }, () => []);
@@ -41,8 +52,10 @@ interface ScoringState {
   startNewGame: () => void;
   /** Switch session type. Locked while a session is in progress (currentSessionGames.length > 0). */
   setSessionType: (type: SessionType) => void;
-  /** Commit the current session to history. Resets everything for the next session. */
-  saveSession: () => void;
+  /** Non-null when the last saveSession call hit a Supabase error. Cleared on next successful save or discard. */
+  lastSaveError: string | null;
+  /** Commit the current session to history. Awaits Supabase before clearing local state — failure keeps state intact and shows an alert. */
+  saveSession: () => Promise<void>;
   /** Abandon the current session without saving. Resets everything. */
   discardSession: () => void;
   /** Wipe all saved session history. */
@@ -59,6 +72,7 @@ export const useScoringStore = create<ScoringState>()(
       sessionType: 'Practice',
       currentSessionGames: [],
       savedSessions: [],
+      lastSaveError: null,
 
       submitBall: () => {
         const { frames, currentFrameIndex, isGameComplete, pinsStandingBeforeBall } = get();
@@ -177,7 +191,7 @@ export const useScoringStore = create<ScoringState>()(
         set({ sessionType: type });
       },
 
-      saveSession: () => {
+      saveSession: async () => {
         const { currentSessionGames, sessionType } = get();
         if (currentSessionGames.length === 0) return;
 
@@ -193,20 +207,35 @@ export const useScoringStore = create<ScoringState>()(
           averageScore,
         };
 
-        // Also save to Supabase so history syncs across devices.
-        supabase.auth.getUser().then(({ data }) => {
-          const userId = data?.user?.id;
-          if (!userId) return;
-          supabase.from('game_sessions').insert({
-            user_id: userId,
-            type: sessionType,
-            completed_at: completedAt,
-            average_score: averageScore,
-            games: currentSessionGames,
-          });
+        // ── Supabase first — await it so we know whether it succeeded ──
+        // If auth or insert fails we bail early and keep local state intact
+        // (the user's game data is not lost — they can try again).
+        const { data: userData, error: authError } = await supabase.auth.getUser();
+        if (authError || !userData?.user?.id) {
+          const msg = authError?.message ?? 'No authenticated user found. Please sign in again.';
+          set({ lastSaveError: `Auth error: ${msg}` });
+          showAlert('Sign-in Required', msg);
+          return;
+        }
+
+        const { error: insertError } = await supabase.from('game_sessions').insert({
+          user_id: userData.user.id,
+          type: sessionType,
+          completed_at: completedAt,
+          average_score: averageScore,
+          games: currentSessionGames,
         });
 
-        // Save session locally, clear in-progress data, reset for next session.
+        if (insertError) {
+          const msg = `${insertError.message} (code: ${insertError.code})`;
+          set({ lastSaveError: msg });
+          showAlert('Failed to Save Session', msg);
+          // Don't return — still save locally so the bowler's data isn't lost.
+        } else {
+          set({ lastSaveError: null });
+        }
+
+        // ── Local save — only reached after Supabase call completes ──
         useLanePlayStore.getState().resetSession();
         set((state) => ({
           savedSessions: [session, ...state.savedSessions],
@@ -226,6 +255,7 @@ export const useScoringStore = create<ScoringState>()(
           currentFrameIndex: 0,
           isGameComplete: false,
           pinsStandingBeforeBall: FULL_RACK(),
+          lastSaveError: null,
         });
       },
 
@@ -241,6 +271,7 @@ export const useScoringStore = create<ScoringState>()(
         sessionType: state.sessionType,
         currentSessionGames: state.currentSessionGames,
         savedSessions: state.savedSessions,
+        lastSaveError: state.lastSaveError,
       }),
     }
   )
