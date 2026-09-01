@@ -19,6 +19,7 @@ export function SessionControls() {
   const startNewGame = useScoringStore((s) => s.startNewGame);
   const saveSession = useScoringStore((s) => s.saveSession);
   const discardSession = useScoringStore((s) => s.discardSession);
+  const lastSaveError = useScoringStore((s) => s.lastSaveError);
 
   if (!isGameComplete) return null;
 
@@ -88,6 +89,27 @@ export function SessionControls() {
               )}
             </Text>
           )}
+        </View>
+      )}
+
+      {lastSaveError && (
+        <View
+          style={{
+            borderRadius: 8,
+            backgroundColor: 'rgba(248,113,113,0.12)',
+            borderWidth: 1,
+            borderColor: 'rgba(248,113,113,0.4)',
+            paddingHorizontal: 12,
+            paddingVertical: 10,
+            gap: 4,
+          }}
+        >
+          <Text style={{ fontSize: 12, fontWeight: '700', color: '#f87171' }}>
+            ⚠ Save Failed — Your data is still here. Try again or check your connection.
+          </Text>
+          <Text style={{ fontSize: 11, color: 'rgba(248,113,113,0.8)' }} numberOfLines={3}>
+            {lastSaveError}
+          </Text>
         </View>
       )}
 
