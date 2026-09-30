@@ -9,35 +9,42 @@ import { useScoringStore } from '../store/useScoringStore';
  *
  * Both buttons set all pins to knocked-down (false) and immediately call
  * submitBall(). The scoring engine determines strike vs spare from the
- * resulting pinfall count — these buttons are purely a UX shortcut.
+ * resulting pinfall — these are purely a UX shortcut.
  *
- * Hidden once the game is complete (SessionControls takes over).
+ * Works in both normal play and edit mode.
+ * Hidden only when a game is complete AND no frame is being edited.
  */
 export function StrikeSpareButtons() {
   const isGameComplete = useScoringStore((s) => s.isGameComplete);
   const submitBall = useScoringStore((s) => s.submitBall);
   const currentFrameIndex = useScoringStore((s) => s.currentFrameIndex);
   const frames = useScoringStore((s) => s.frames);
+  const editingFrameIndex = useScoringStore((s) => s.editingFrameIndex);
+  const editingRolls = useScoringStore((s) => s.editingRolls);
 
-  if (isGameComplete) return null;
+  // Hide when game is complete and not editing a past frame.
+  if (isGameComplete && editingFrameIndex === null) return null;
 
-  const isFirstBallOfFrame = frames[currentFrameIndex].length === 0;
+  // In edit mode, check how many balls have been entered for the edit frame.
+  // In normal play, check balls in the current frame.
+  const isFirstBallOfFrame =
+    editingFrameIndex !== null
+      ? editingRolls.length === 0
+      : frames[currentFrameIndex].length === 0;
 
   const handleStrike = () => {
-    // All pins down → pinfall = pinsStandingBefore (10 on first ball = strike)
     useLanePlayStore.setState({ pins: Array(10).fill(false) });
     submitBall();
   };
 
   const handleSpare = () => {
-    // All remaining pins down → pinfall = whatever was standing = spare
     useLanePlayStore.setState({ pins: Array(10).fill(false) });
     submitBall();
   };
 
   return (
     <View style={{ flexDirection: 'row', gap: 10 }}>
-      {/* STRIKE — only useful on first ball */}
+      {/* STRIKE — full rack clear on first ball */}
       <WebButton
         onPress={handleStrike}
         style={{
@@ -58,7 +65,7 @@ export function StrikeSpareButtons() {
         </Text>
       </WebButton>
 
-      {/* SPARE — only useful on ball 2+ */}
+      {/* SPARE — clears remaining pins on ball 2+ */}
       <WebButton
         onPress={handleSpare}
         style={{
