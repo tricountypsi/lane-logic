@@ -48,37 +48,17 @@ function BoardStepper({ label, value, onChange }: BoardStepperProps) {
 }
 
 /**
- * Board tracking input: lets the bowler log the board they intended to play
- * (Target) and the board the ball actually tracked through (Actual). The
- * difference drives the virtual coach's Confidence Score — large or
- * consistent misses signal execution inconsistency and lower the coach's
- * reliability rating before it offers adjustment advice.
+ * Board tracking input: logs the target board and foot position for each shot.
  */
 export function BoardSelector() {
   const targetBoard = useLanePlayStore((s) => s.targetBoard);
-  const actualBoard = useLanePlayStore((s) => s.actualBoard);
   const footPosition = useLanePlayStore((s) => s.footPosition);
   const setTargetBoard = useLanePlayStore((s) => s.setTargetBoard);
-  const setActualBoard = useLanePlayStore((s) => s.setActualBoard);
   const setFootPosition = useLanePlayStore((s) => s.setFootPosition);
-
-  const miss = Math.abs(targetBoard - actualBoard);
-  const missColor =
-    miss === 0 ? '#34d399' : miss <= 2 ? '#fbbf24' : '#f87171';
 
   return (
     <View style={{ gap: 12 }}>
       <BoardStepper label="Target Board" value={targetBoard} onChange={setTargetBoard} />
-      <BoardStepper label="Actual Board" value={actualBoard} onChange={setActualBoard} />
-      <View style={{ flexDirection: 'row', justifyContent: 'flex-end' }}>
-        {miss > 0 ? (
-          <Text style={{ fontSize: 12, fontWeight: '600', color: missColor }}>
-            {miss} board{miss !== 1 ? 's' : ''} off target
-          </Text>
-        ) : (
-          <Text style={{ fontSize: 12, fontWeight: '600', color: '#34d399' }}>On target</Text>
-        )}
-      </View>
 
       {/* Divider */}
       <View style={{ height: 1, backgroundColor: 'rgba(255,255,255,0.06)' }} />
