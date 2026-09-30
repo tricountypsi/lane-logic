@@ -12,13 +12,17 @@ const CYAN = '#22d3ee';
  * Row 1 (Execution): GR · PO · PI · SP
  * Row 2 (Reaction):  FL · HI · LI · BK
  *
- * Tapping an active pill deselects it. Both rows reset each frame.
+ * Uses the active frame index — either editingFrameIndex (when correcting a
+ * past frame) or currentFrameIndex (normal play) — so saved metrics for the
+ * frame being edited are automatically pre-selected.
  */
 export function DeliveryMetricsInput() {
   const currentFrameIndex = useScoringStore((s) => s.currentFrameIndex);
-  const { frameMetrics, setExecution, setReaction } = useDeliveryStore();
+  const editingFrameIndex = useScoringStore((s) => s.editingFrameIndex);
+  const activeFrameIndex = editingFrameIndex ?? currentFrameIndex;
 
-  const metrics = frameMetrics[currentFrameIndex] ?? { execution: null, reaction: null };
+  const { frameMetrics, setExecution, setReaction } = useDeliveryStore();
+  const metrics = frameMetrics[activeFrameIndex] ?? { execution: null, reaction: null };
 
   const pillStyle = (active: boolean) => ({
     flex: 1,
@@ -50,7 +54,7 @@ export function DeliveryMetricsInput() {
             return (
               <WebButton
                 key={opt.key}
-                onPress={() => setExecution(currentFrameIndex, opt.key)}
+                onPress={() => setExecution(activeFrameIndex, opt.key)}
                 style={pillStyle(active)}
               >
                 <Text style={pillText(active)}>{opt.label}</Text>
@@ -71,7 +75,7 @@ export function DeliveryMetricsInput() {
             return (
               <WebButton
                 key={opt.key}
-                onPress={() => setReaction(currentFrameIndex, opt.key)}
+                onPress={() => setReaction(activeFrameIndex, opt.key)}
                 style={pillStyle(active)}
               >
                 <Text style={pillText(active)}>{opt.label}</Text>
