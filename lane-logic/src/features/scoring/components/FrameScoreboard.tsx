@@ -1,13 +1,13 @@
 import { ScrollView, View, Text } from 'react-native';
 
+import { WebButton } from '@/shared/WebButton';
 import { useScoringStore } from '../store/useScoringStore';
 import { useFrameResults } from '../hooks/useFrameResults';
 import { FRAME_COUNT } from '../utils/frameRules';
 
 /**
  * Renders a single ball's pinfall as the traditional scoreboard glyph:
- * "X" for a strike, "/" for a spare (relative to the immediately preceding
- * roll in the same frame), "-" for a gutter/miss, otherwise the pin count.
+ * "X" for a strike, "/" for a spare, "-" for a gutter, otherwise the count.
  */
 function rollLabel(rolls: number[], rollIndex: number): string {
   const pins = rolls[rollIndex];
@@ -23,47 +23,126 @@ function rollLabel(rolls: number[], rollIndex: number): string {
 }
 
 /**
- * Classic horizontally-scrolling ten-frame scoreboard. Each frame shows its
- * individual rolls up top and the running cumulative score below — scores
- * render blank until `calculateScores` can resolve a strike/spare's bonus
- * from future rolls, rather than showing a misleading 0.
+ * Classic horizontally-scrolling ten-frame scoreboard.
+ *
+ * Completed frames are tappable — tapping one enters edit mode for that
+ * frame (amber highlight). A "Cancel edit" banner appears above the
+ * scoreboard while editing so the user can bail without committing.
  */
 export function FrameScoreboard() {
-  const currentFrameIndex = useScoringStore((state) => state.currentFrameIndex);
-  const isGameComplete = useScoringStore((state) => state.isGameComplete);
+  const currentFrameIndex = useScoringStore((s) => s.currentFrameIndex);
+  const isGameComplete = useScoringStore((s) => s.isGameComplete);
+  const editingFrameIndex = useScoringStore((s) => s.editingFrameIndex);
+  const setEditingFrame = useScoringStore((s) => s.setEditingFrame);
+  const cancelEditing = useScoringStore((s) => s.cancelEditing);
   const results = useFrameResults();
 
   return (
-    <ScrollView horizontal showsHorizontalScrollIndicator={false}>
-      <View className="flex-row gap-2">
-        {results.map((frame, index) => {
-          const isCurrent = index === currentFrameIndex && !isGameComplete;
-          const ballSlots = index === FRAME_COUNT - 1 ? 3 : 2;
+    <View style={{ gap: 8 }}>
+      {/* ── Cancel-edit banner ── */}
+      {editingFrameIndex !== null && (
+        <View
+          style={{
+            flexDirection: 'row',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            borderRadius: 8,
+            backgroundColor: 'rgba(251,191,36,0.1)',
+            borderWidth: 1,
+            borderColor: 'rgba(251,191,36,0.35)',
+            paddingHorizontal: 12,
+            paddingVertical: 8,
+          }}
+        >
+          <Text style={{ fontSize: 12, color: '#fbbf24', fontWeight: '600' }}>
+            Editing Frame {editingFrameIndex + 1} — re-enter all balls
+          </Text>
+          <WebButton onPress={cancelEditing}>
+            <Text style={{ fontSize: 12, color: '#fbbf24', fontWeight: '700' }}>✕ Cancel</Text>
+          </WebButton>
+        </View>
+      )}
 
-          return (
-            <View
-              key={index}
-              className={`w-16 rounded-lg border p-2 ${
-                isCurrent ? 'border-cyan-400 bg-cyan-400/10' : 'border-white/10 bg-white/5'
-              }`}
-            >
-              <Text className="text-center text-[10px] text-white/40">{index + 1}</Text>
+      <ScrollView horizontal showsHorizontalScrollIndicator={false}>
+        <View style={{ flexDirection: 'row', gap: 8 }}>
+          {results.map((frame, index) => {
+            const isCurrent = index === currentFrameIndex && !isGameComplete && editingFrameIndex === null;
+            const isEditing = index === editingFrameIndex;
+            // A frame is tappable once it has been played (has rolls or the game moved past it).
+            const isCompleted = index < currentFrameIndex || isGameComplete;
+            const ballSlots = index === FRAME_COUNT - 1 ? 3 : 2;
 
-              <View className="mt-1 flex-row justify-center gap-1">
-                {Array.from({ length: ballSlots }).map((_, ballIndex) => (
-                  <Text key={ballIndex} className="w-4 text-center text-xs font-bold text-white">
-                    {rollLabel(frame.rolls, ballIndex)}
+            let borderColor = 'rgba(255,255,255,0.1)';
+            let bgColor = 'rgba(255,255,255,0.05)';
+            if (isCurrent) { borderColor = '#22d3ee'; bgColor = 'rgba(34,211,238,0.1)'; }
+            if (isEditing) { borderColor = '#fbbf24'; bgColor = 'rgba(251,191,36,0.12)'; }
+
+            const inner = (
+              <View
+                style={{
+                  width: 56,
+                  borderRadius: 8,
+                  borderWidth: 1,
+                  borderColor,
+                  backgroundColor: bgColor,
+                  padding: 6,
+                }}
+              >
+                <Text
+                  style={{
+                    textAlign: 'center',
+                    fontSize: 10,
+                    color: isEditing ? '#fbbf24' : isCurrent ? '#22d3ee' : 'rgba(255,255,255,0.4)',
+                  }}
+                >
+                  {index + 1}
+                </Text>
+
+                <View style={{ marginTop: 4, flexDirection: 'row', justifyContent: 'center', gap: 2 }}>
+                  {Array.from({ length: ballSlots }).map((_, ballIndex) => (
+                    <Text
+                      key={ballIndex}
+                      style={{ width: 14, textAlign: 'center', fontSize: 11, fontWeight: '700', color: '#fff' }}
+                    >
+                      {rollLabel(frame.rolls, ballIndex)}
+                    </Text>
+                  ))}
+                </View>
+
+                <Text
+                  style={{
+                    marginTop: 6,
+                    textAlign: 'center',
+                    fontSize: 13,
+                    fontWeight: '700',
+                    color: isEditing ? '#fbbf24' : '#67e8f9',
+                  }}
+                >
+                  {frame.cumulativeScore ?? '—'}
+                </Text>
+
+                {/* Edit hint dot on completed frames */}
+                {isCompleted && editingFrameIndex === null && (
+                  <Text style={{ textAlign: 'center', fontSize: 8, color: 'rgba(255,255,255,0.2)', marginTop: 2 }}>
+                    ✎
                   </Text>
-                ))}
+                )}
               </View>
+            );
 
-              <Text className="mt-2 text-center text-sm font-bold text-cyan-300">
-                {frame.cumulativeScore ?? '—'}
-              </Text>
-            </View>
-          );
-        })}
-      </View>
-    </ScrollView>
+            // Wrap completed (and not currently being edited) frames in a tap target.
+            if (isCompleted && !isEditing) {
+              return (
+                <WebButton key={index} onPress={() => setEditingFrame(index)}>
+                  {inner}
+                </WebButton>
+              );
+            }
+
+            return <View key={index}>{inner}</View>;
+          })}
+        </View>
+      </ScrollView>
+    </View>
   );
 }
