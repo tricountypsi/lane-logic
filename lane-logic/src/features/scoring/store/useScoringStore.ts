@@ -15,7 +15,6 @@ function showAlert(title: string, message: string) {
   if (Platform.OS === 'web' && typeof window !== 'undefined') {
     window.alert(`${title}\n\n${message}`);
   } else {
-    // Lazy-require so we don't pull react-native Alert into server bundles.
     const { Alert } = require('react-native');
     Alert.alert(title, message);
   }
@@ -25,19 +24,25 @@ const FULL_RACK = (): boolean[] => Array(PINS_PER_RACK).fill(true);
 const EMPTY_GAME = (): number[][] => Array.from({ length: FRAME_COUNT }, () => []);
 
 interface ScoringState {
-  /** Raw pinfall per ball, grouped by frame. The single source of truth — frame/cumulative scores are always derived from this via `calculateScores`, never stored. */
+  /** Raw pinfall per ball, grouped by frame. Single source of truth — scores derived via calculateScores. */
   frames: number[][];
   currentFrameIndex: number;
   isGameComplete: boolean;
 
   /**
-   * Snapshot of the shared `lane-play` PinRack taken right before the ball
-   * about to be thrown. `submitBall` diffs the rack's *current* state
-   * against this snapshot to derive how many pins fell on that one ball —
-   * the rack itself only ever represents "what's standing right now", so
-   * pinfall has to be inferred rather than read directly.
+   * Snapshot of the shared lane-play PinRack taken right before the ball
+   * about to be thrown. submitBall diffs the rack's current state against
+   * this snapshot to derive pinfall.
    */
   pinsStandingBeforeBall: boolean[];
+
+  /**
+   * Edit mode — when non-null the user is correcting a past frame.
+   * submitBall routes into the edit path instead of the normal path.
+   */
+  editingFrameIndex: number | null;
+  /** Balls entered so far during the current edit session. */
+  editingRolls: number[];
 
   /** Session management */
   sessionType: SessionType;
@@ -45,18 +50,26 @@ interface ScoringState {
   currentSessionGames: CompletedGame[];
   /** All sessions the bowler has chosen to save. Newest first. */
   savedSessions: BowlingSession[];
-
-  /** Reads the shared PinRack, records this ball's pinfall against the current frame, advances frame/game state, and re-racks the shared pins when a frame (or a 10th-frame fill ball) calls for it. */
-  submitBall: () => void;
-  /** Starts the next game within the current session — resets frames, oil, shots, and boards but preserves `currentSessionGames`. */
-  startNewGame: () => void;
-  /** Switch session type. Locked while a session is in progress (currentSessionGames.length > 0). */
-  setSessionType: (type: SessionType) => void;
-  /** Non-null when the last saveSession call hit a Supabase error. Cleared on next successful save or discard. */
+  /** Non-null when the last saveSession call hit a Supabase error. */
   lastSaveError: string | null;
-  /** Commit the current session to history. Awaits Supabase before clearing local state — failure keeps state intact and shows an alert. */
+
+  /** Records this ball's pinfall, advances frame/game state, and re-racks pins. */
+  submitBall: () => void;
+  /** Starts the next game within the current session. */
+  startNewGame: () => void;
+  /** Switch session type. Locked while a session is in progress. */
+  setSessionType: (type: SessionType) => void;
+  /**
+   * Enter edit mode for a completed frame. Resets the pin rack so the user
+   * re-enters every ball for that frame from scratch. Delivery metrics stored
+   * in useDeliveryStore for that frame index are shown automatically.
+   */
+  setEditingFrame: (index: number) => void;
+  /** Cancel an in-progress edit without committing any changes. */
+  cancelEditing: () => void;
+  /** Commit the current session to Supabase, then clear local state. */
   saveSession: () => Promise<void>;
-  /** Abandon the current session without saving. Resets everything. */
+  /** Abandon the current session without saving. */
   discardSession: () => void;
   /** Wipe all saved session history. */
   clearHistory: () => void;
@@ -69,50 +82,123 @@ export const useScoringStore = create<ScoringState>()(
       currentFrameIndex: 0,
       isGameComplete: false,
       pinsStandingBeforeBall: FULL_RACK(),
+      editingFrameIndex: null,
+      editingRolls: [],
       sessionType: 'Practice',
       currentSessionGames: [],
       savedSessions: [],
       lastSaveError: null,
 
       submitBall: () => {
-        const { frames, currentFrameIndex, isGameComplete, pinsStandingBeforeBall } = get();
-        if (isGameComplete) return;
+        const {
+          frames,
+          currentFrameIndex,
+          isGameComplete,
+          pinsStandingBeforeBall,
+          editingFrameIndex,
+          editingRolls,
+        } = get();
+
+        // Block normal play once game is done; editing past frames is still allowed.
+        if (isGameComplete && editingFrameIndex === null) return;
 
         const lanePlay = useLanePlayStore.getState();
-
         const standingBefore = pinsStandingBeforeBall.filter(Boolean).length;
         const standingAfter = lanePlay.pins.filter(Boolean).length;
         const pinfall = Math.max(0, standingBefore - standingAfter);
 
+        // ── EDIT MODE ──────────────────────────────────────────────────────────
+        if (editingFrameIndex !== null) {
+          const newEditRolls = [...editingRolls, pinfall];
+          const isContinuationBall = editingRolls.length > 0;
+
+          lanePlay.logShot(false, isContinuationBall);
+
+          // Patch spare label / carry friction alert (same logic as normal mode).
+          const isSpareClose = standingAfter === 0 && standingBefore !== PINS_PER_RACK;
+          const previousBallInFrame = isContinuationBall
+            ? useLanePlayStore.getState().shotLog[1]
+            : undefined;
+          const carryFrictionForward = Boolean(previousBallInFrame?.frictionAlert);
+
+          if (isSpareClose || carryFrictionForward) {
+            useLanePlayStore.setState((state) => ({
+              shotLog: state.shotLog.map((shot, i) =>
+                i === 0
+                  ? {
+                      ...shot,
+                      ...(isSpareClose ? { leave: 'Spare' } : {}),
+                      frictionAlert: shot.frictionAlert || carryFrictionForward,
+                    }
+                  : shot
+              ),
+            }));
+          }
+
+          const editFrameDone = isFrameComplete(editingFrameIndex, newEditRolls);
+
+          if (editFrameDone) {
+            // Commit corrected rolls into the frames array.
+            const updatedFrames = frames.map((f, i) =>
+              i === editingFrameIndex ? newEditRolls : f
+            );
+
+            // Re-check whether the 10th frame is still complete after the edit.
+            const gameStillComplete = isFrameComplete(
+              FRAME_COUNT - 1,
+              updatedFrames[FRAME_COUNT - 1]
+            );
+
+            // Keep currentSessionGames in sync if a completed game was already logged.
+            let updatedSessionGames = get().currentSessionGames;
+            if (isGameComplete || gameStillComplete) {
+              const results = calculateScores(updatedFrames);
+              const finalScore = results[FRAME_COUNT - 1].cumulativeScore ?? 0;
+              updatedSessionGames = updatedSessionGames.map((g, i) =>
+                i === updatedSessionGames.length - 1
+                  ? { ...g, frames: updatedFrames, finalScore }
+                  : g
+              );
+            }
+
+            // Reset pin rack to all-dark for the frame the bowler is actually on.
+            useLanePlayStore.setState({ pins: Array(10).fill(false) });
+
+            set({
+              frames: updatedFrames,
+              editingFrameIndex: null,
+              editingRolls: [],
+              isGameComplete: gameStillComplete,
+              pinsStandingBeforeBall: FULL_RACK(),
+              currentSessionGames: updatedSessionGames,
+            });
+          } else {
+            // More balls needed in this edit frame — set up rack for next ball.
+            const pinsNowStanding = useLanePlayStore.getState().pins;
+            const nextPinsNeeded = pinsStandingForNextRoll(editingFrameIndex, newEditRolls);
+            useLanePlayStore.setState({ pins: Array(10).fill(false) });
+            set({
+              editingRolls: newEditRolls,
+              pinsStandingBeforeBall:
+                nextPinsNeeded === PINS_PER_RACK ? FULL_RACK() : pinsNowStanding,
+            });
+          }
+          return;
+        }
+
+        // ── NORMAL MODE ────────────────────────────────────────────────────────
         const updatedFrames = frames.map((rolls, i) =>
           i === currentFrameIndex ? [...rolls, pinfall] : rolls
         );
         const updatedRolls = updatedFrames[currentFrameIndex];
 
-        // Spare shots (any ball after the first in a frame) don't deplete oil —
-        // the bowler aims directly at remaining pins rather than driving through
-        // the oil pattern the way a strike ball does.
         const isContinuationBall = frames[currentFrameIndex].length > 0;
         lanePlay.logShot(false, isContinuationBall);
 
-        // Two patches to the entry `logShot` just created, both only
-        // relevant for ball 2+ of a frame (a fresh first ball is always
-        // correctly labeled already):
-        //
-        // 1. `logShot` always labels an all-clear rack as "Strike", which is
-        //    only actually true when the ball was thrown at a freshly-racked
-        //    10 pins. Clearing out whatever was left standing from a prior
-        //    ball is a spare conversion, not a strike.
-        // 2. If the *previous* ball in this same frame carried a
-        //    `frictionAlert` (it left the weak-side corner pin standing —
-        //    10 for a right-handed bowler, 7 for a left-handed bowler),
-        //    that signal needs to survive onto this ball too — most bowlers
-        //    log a whole frame's balls only after they've thrown both, so
-        //    by the time this entry exists the coach needs to already see
-        //    the friction read rather than losing it the moment "Spare"
-        //    overwrites the leave text.
         const isSpareClose = standingAfter === 0 && standingBefore !== PINS_PER_RACK;
-        const previousBallInFrame = isContinuationBall ? useLanePlayStore.getState().shotLog[1] : undefined;
+        const previousBallInFrame = isContinuationBall
+          ? useLanePlayStore.getState().shotLog[1]
+          : undefined;
         const carryFrictionForward = Boolean(previousBallInFrame?.frictionAlert);
 
         if (isSpareClose || carryFrictionForward) {
@@ -137,22 +223,18 @@ export const useScoringStore = create<ScoringState>()(
           ? !gameDone
           : pinsStandingForNextRoll(currentFrameIndex, updatedRolls) === PINS_PER_RACK;
 
-        // Capture which pins are actually standing NOW, before we touch the rack.
-        // This becomes pinsStandingBeforeBall for the next roll.
         const pinsNowStanding = useLanePlayStore.getState().pins;
 
         if (needsFreshRack) {
-          // Start of a new frame → reset to all-dark (user selects standing pins)
           useLanePlayStore.setState({ pins: Array(10).fill(false) });
         } else if (!gameDone) {
-          // Spare setup: reset rack to all-dark so the bowler taps which
-          // pins are LEFT STANDING rather than which ones fell.
           useLanePlayStore.setState({ pins: Array(10).fill(false) });
         }
 
         set({
           frames: updatedFrames,
-          currentFrameIndex: frameDone && !isLastFrame ? currentFrameIndex + 1 : currentFrameIndex,
+          currentFrameIndex:
+            frameDone && !isLastFrame ? currentFrameIndex + 1 : currentFrameIndex,
           isGameComplete: gameDone,
           pinsStandingBeforeBall: needsFreshRack ? FULL_RACK() : pinsNowStanding,
         });
@@ -172,21 +254,38 @@ export const useScoringStore = create<ScoringState>()(
         }
       },
 
+      setEditingFrame: (index) => {
+        // Ball 1 of any edit is always a fresh full rack.
+        useLanePlayStore.setState({ pins: Array(10).fill(false) });
+        set({
+          editingFrameIndex: index,
+          editingRolls: [],
+          pinsStandingBeforeBall: FULL_RACK(),
+        });
+      },
+
+      cancelEditing: () => {
+        useLanePlayStore.setState({ pins: Array(10).fill(false) });
+        set({
+          editingFrameIndex: null,
+          editingRolls: [],
+          pinsStandingBeforeBall: FULL_RACK(),
+        });
+      },
+
       startNewGame: () => {
-        // Start new game but keep oil volume — oil degrades continuously
-        // across the whole series, not just one game.
         useLanePlayStore.getState().startNewGame();
         set({
           frames: EMPTY_GAME(),
           currentFrameIndex: 0,
           isGameComplete: false,
           pinsStandingBeforeBall: FULL_RACK(),
-          // currentSessionGames intentionally preserved — the session continues.
+          editingFrameIndex: null,
+          editingRolls: [],
         });
       },
 
       setSessionType: (type) => {
-        // Guard: don't allow switching mid-session.
         if (get().currentSessionGames.length > 0) return;
         set({ sessionType: type });
       },
@@ -207,9 +306,6 @@ export const useScoringStore = create<ScoringState>()(
           averageScore,
         };
 
-        // ── Supabase first — await it so we know whether it succeeded ──
-        // If auth or insert fails we bail early and keep local state intact
-        // (the user's game data is not lost — they can try again).
         const { data: userData, error: authError } = await supabase.auth.getUser();
         if (authError || !userData?.user?.id) {
           const msg = authError?.message ?? 'No authenticated user found. Please sign in again.';
@@ -230,12 +326,10 @@ export const useScoringStore = create<ScoringState>()(
           const msg = `${insertError.message} (code: ${insertError.code})`;
           set({ lastSaveError: msg });
           showAlert('Failed to Save Session', msg);
-          // Don't return — still save locally so the bowler's data isn't lost.
         } else {
           set({ lastSaveError: null });
         }
 
-        // ── Local save — only reached after Supabase call completes ──
         useLanePlayStore.getState().resetSession();
         set((state) => ({
           savedSessions: [session, ...state.savedSessions],
@@ -244,6 +338,8 @@ export const useScoringStore = create<ScoringState>()(
           currentFrameIndex: 0,
           isGameComplete: false,
           pinsStandingBeforeBall: FULL_RACK(),
+          editingFrameIndex: null,
+          editingRolls: [],
         }));
       },
 
@@ -255,6 +351,8 @@ export const useScoringStore = create<ScoringState>()(
           currentFrameIndex: 0,
           isGameComplete: false,
           pinsStandingBeforeBall: FULL_RACK(),
+          editingFrameIndex: null,
+          editingRolls: [],
           lastSaveError: null,
         });
       },
@@ -272,6 +370,8 @@ export const useScoringStore = create<ScoringState>()(
         currentSessionGames: state.currentSessionGames,
         savedSessions: state.savedSessions,
         lastSaveError: state.lastSaveError,
+        editingFrameIndex: state.editingFrameIndex,
+        editingRolls: state.editingRolls,
       }),
     }
   )
